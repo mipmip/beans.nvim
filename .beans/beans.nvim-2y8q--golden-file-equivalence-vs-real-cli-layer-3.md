@@ -1,11 +1,11 @@
 ---
 # beans.nvim-2y8q
 title: Golden-file equivalence vs real CLI (layer 3)
-status: todo
+status: completed
 type: epic
 priority: normal
 created_at: 2026-08-19T13:13:13Z
-updated_at: 2026-08-19T13:13:13Z
+updated_at: 2026-08-19T14:52:06Z
 parent: beans.nvim-hrpy
 blocked_by:
     - beans.nvim-viwn
@@ -25,3 +25,11 @@ blocked_by:
 - [ ] Golden matrix byte-identical to `beans update` across every scenario.
 
 Briefing §11.3, §12 (the acceptance test that matters most).
+
+## Summary of Changes
+
+- golden_spec.lua: §11.3 matrix (14 scenarios across minimal + full beans) applies each
+  change via the real `beans update` and via frontmatter.lua and asserts equivalence —
+  byte-identical modulo the Beans-owned updated_at line, with the tags block compared as a
+  SET (beans emits tag order nondeterministically; Go map iteration). helpers/project.lua
+  drives the real CLI. 10/10 consecutive runs green.

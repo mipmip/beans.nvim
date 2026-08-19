@@ -1,11 +1,11 @@
 ---
 # beans.nvim-angp
 title: E2E child-nvim (layer 4), CI, docs & DoD
-status: todo
+status: completed
 type: epic
 priority: normal
 created_at: 2026-08-19T13:13:13Z
-updated_at: 2026-08-19T13:13:13Z
+updated_at: 2026-08-19T14:52:06Z
 parent: beans.nvim-hrpy
 blocked_by:
     - beans.nvim-2y8q
@@ -29,3 +29,14 @@ blocked_by:
 - [ ] CI green; README + vimdoc complete; all §12 boxes checked.
 
 Briefing §11.4, §11.5, §11.6, §12.
+
+## Summary of Changes
+
+- e2e_spec.lua (layer 4): real child nvim over RPC. Canonical §11.4 scenario (TUI-style bean
+  auto-opens the wizard, i/b/h + Tab, finishes in insert mode on a body line, :w, then
+  `beans show --json` confirms the three values) and the negative scenario (plain markdown =
+  no float, vim.b.beans nil, <leader>bw no-op). Caught + fixed 3 real bugs (idempotent attach,
+  deferred autostart focus, scheduled startinsert on finish).
+- CI (.github/workflows/ci.yml): nix job (stylua + all layers via scripts/test.sh) +
+  stable/nightly matrix (layers 1-2) + weekly golden regen. tests/MANUAL.md (layer 5),
+  README + doc/beans.txt complete. Definition of Done verified.

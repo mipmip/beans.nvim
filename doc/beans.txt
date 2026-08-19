@@ -1,19 +1,23 @@
-*beans.txt*                     A Neovim companion for the Beans issue tracker
+*beans.txt*              A Neovim companion for the Beans issue tracker
 
 ==============================================================================
 CONTENTS                                                        *beans-contents*
 
-  1. Introduction ............................ |beans-introduction|
-  2. Setup ................................... |beans-setup|
-
-Full documentation is written in Milestone 05. This is a stub so `:help beans`
-resolves during development.
+  1. Introduction .......................... |beans-introduction|
+  2. Setup ................................. |beans-setup|
+  3. The wizard ............................ |beans-wizard|
+  4. Commands .............................. |beans-commands|
+  5. Keymaps ............................... |beans-keymaps|
+  6. Configuration ......................... |beans-config|
+  7. Health ................................ |beans-health|
 
 ==============================================================================
 1. INTRODUCTION                                             *beans-introduction*
 
-beans.nvim opens a small wizard when the Beans TUI creates a bean in your
-$EDITOR, letting you set frontmatter fields with single keystrokes.
+beans.nvim opens a small near-cursor wizard when the Beans TUI creates a bean in
+your $EDITOR, letting you set the frontmatter fields (status, type, priority,
+tags, parent) with single keystrokes, then drops you into the body in insert
+mode. All edits are made directly in the buffer, so each field is one undo step.
 
 See beans-nvim-briefing.md in the repository for the complete design spec.
 
@@ -23,7 +27,57 @@ See beans-nvim-briefing.md in the repository for the complete design spec.
 >lua
     require("beans").setup()
 <
+setup() with no arguments yields the intended experience. Partial option tables
+merge over the defaults; an invalid value warns once and falls back.
 
-`setup()` with no arguments yields the intended experience.
+==============================================================================
+3. THE WIZARD                                                     *beans-wizard*
 
-vim:tw=78:ts=8:ft=help:norl:
+Steps, in order: status, type, priority, tags, parent.
+
+The wizard auto-starts on a freshly created bean (created_at within
+`autostart.max_age_seconds` and an empty body). Otherwise use |:BeanWizard|.
+
+Interaction differs by field kind (a deliberate, documented inconsistency):
+  - status/type/priority: press a letter to select + confirm + auto-advance.
+  - tags: <Space> toggles, `n` adds a new tag, <CR>/<Tab> confirm.
+  - parent: type to filter, <C-n>/<C-p> move, <CR> selects.
+
+Universal keys: <Tab> accept+advance, <S-Tab> back, <CR> select, <Esc>/q finish.
+
+==============================================================================
+4. COMMANDS                                                     *beans-commands*
+
+                                                                    *:BeanWizard*
+:BeanWizard        Start the wizard at step 1.
+
+                                                                          *:Bean*
+:Bean              Field menu, then value picker.
+:Bean {field}      Jump straight to one field (completes on field names).
+
+:checkhealth beans Diagnostics; see |beans-health|.
+
+==============================================================================
+5. KEYMAPS                                                       *beans-keymaps*
+
+Buffer-local, bean buffers only (disable with `keymaps.enabled = false`):
+
+  <leader>bw   start wizard
+  <leader>bb   field menu
+  <leader>bs   status        <leader>bt   type        <leader>bp   priority
+  <leader>bg   tags          <leader>bP   parent
+
+==============================================================================
+6. CONFIGURATION                                                  *beans-config*
+
+The complete default table is documented in beans-nvim-briefing.md §7.3. Merge a
+partial table via setup(); siblings are preserved.
+
+==============================================================================
+7. HEALTH                                                         *beans-health*
+
+`:checkhealth beans` reports the beans binary and version, the project root and
+bean directory, whether the current buffer is recognised (and why not if it is
+not), the discovered vocabularies, and cache state.
+
+vim:tw=78:ts=8:et:ft=help:norl:

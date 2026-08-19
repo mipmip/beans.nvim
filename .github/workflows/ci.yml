@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Weekly: regenerate golden files against the pinned beans and fail on drift.
+    - cron: "0 6 * * 1"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Primary gate: the full suite (layers 1-4) through the flake's NixVim, which
+  # ships plenary, treesitter and the pinned `beans` binary.
+  nix:
+    name: nix develop (all layers + stylua)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: stylua --check
+        run: nix develop --command stylua --check lua/ tests/ plugin/
+      - name: Test suite (layers 1-4)
+        run: nix develop --command bash scripts/test.sh tests/
+
+  # Cross-version safety net for the parts most likely to drift (floats,
+  # vim.system): layers 1-2 only, which need neither the beans binary nor nix.
+  versions:
+    name: neovim ${{ matrix.neovim }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        neovim: [stable, nightly]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: ${{ matrix.neovim }}
+      - name: Vendor plenary.nvim
+        run: git clone --depth 1 https://github.com/nvim-lua/plenary.nvim .deps/plenary.nvim
+      - name: Unit + wizard specs (layers 1-2)
+        run: |
+          mkdir -p .ci-specs
+          for f in frontmatter schema project detect config wizard actions completion; do
+            cp "tests/${f}_spec.lua" .ci-specs/ 2>/dev/null || true
+          done
+          bash scripts/test.sh .ci-specs

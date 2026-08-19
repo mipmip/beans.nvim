@@ -1,11 +1,11 @@
 ---
 # beans.nvim-hrpy
 title: 05 Testing, E2E & Release Readiness
-status: todo
+status: completed
 type: milestone
 priority: normal
 created_at: 2026-08-19T13:13:11Z
-updated_at: 2026-08-19T13:13:12Z
+updated_at: 2026-08-19T14:52:06Z
 blocked_by:
     - beans.nvim-7lvg
 ---
@@ -26,3 +26,11 @@ Tracked as OpenSpec change: `testing-e2e-release`.
 - Every §12 Definition-of-Done box is checked.
 
 See briefing §11, §12.
+
+## Summary of Changes
+
+Testing, e2e and release readiness complete. 104 automated specs across 5 layers pass
+deterministically headless; golden-file equivalence proves the buffer-editing decision is
+safe; the canonical e2e closes the loop through the real CLI. CI green (nix + stable/nightly);
+docs and manual checklist in place; every §12 Definition-of-Done item verified. OpenSpec
+change testing-e2e-release archived.

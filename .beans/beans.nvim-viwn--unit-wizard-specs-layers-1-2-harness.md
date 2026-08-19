@@ -1,11 +1,11 @@
 ---
 # beans.nvim-viwn
 title: Unit & wizard specs (layers 1-2) + harness
-status: todo
+status: completed
 type: epic
 priority: normal
 created_at: 2026-08-19T13:13:13Z
-updated_at: 2026-08-19T13:13:13Z
+updated_at: 2026-08-19T14:52:06Z
 parent: beans.nvim-hrpy
 blocked_by:
     - beans.nvim-vpcl
@@ -25,3 +25,10 @@ blocked_by:
 - [ ] Layers 1-2 pass headless via PlenaryBustedDirectory.
 
 Briefing §11.1, §11.2, §11.0, §9 tests tree.
+
+## Summary of Changes
+
+- Layers 1-2 harness complete: minimal_init (nix + vendored-plenary CI paths), functional
+  fake-beans stub, helpers/project.lua (real-CLI temp project) and helpers/child.lua (RPC
+  child nvim). Unit + wizard specs cover frontmatter/schema/project/detect/config/wizard/
+  actions/completion. Grep-as-test guards against blocking prompts. All green headless.

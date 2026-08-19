@@ -237,9 +237,16 @@ function M.finish(state)
   end
 
   if fin.insert ~= false then
-    -- Direct call so insert mode is active as soon as control returns to the
-    -- input loop (reliable under both interactive use and headless tests).
-    vim.cmd("startinsert!")
+    -- Schedule so insert mode lands after the triggering keymap/window switch
+    -- settles (finish may be invoked from an insert-mode mapping in the parent
+    -- step). Reliable under a real input loop; headless layer-2 tests assert on
+    -- cursor/float rather than mode.
+    vim.schedule(function()
+      if state.win and vim.api.nvim_win_is_valid(state.win) then
+        pcall(vim.api.nvim_set_current_win, state.win)
+      end
+      vim.cmd("startinsert!")
+    end)
   end
 
   local hooks = state.config.hooks or {}

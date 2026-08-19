@@ -50,6 +50,12 @@ end
 --- @param ctx table  { id, root, beans_dir, bufnr }
 function M.attach(ctx)
   local bufnr = ctx.bufnr
+  -- Idempotent: FileType can fire more than once for a buffer. Attaching twice
+  -- would re-run autostart (a second wizard.start finishes the first, which calls
+  -- startinsert) and re-bind keymaps. Skip if already attached.
+  if vim.b[bufnr].beans then
+    return
+  end
   vim.b[bufnr].beans = ctx
 
   -- Prefetch reads so the tags/parent steps have data by the time they render.
@@ -71,10 +77,17 @@ function M.attach(ctx)
   end
 
   -- Auto-start heuristic: only when this looks freshly created by the TUI.
+  -- Deferred via vim.schedule so the wizard float opens (and takes focus) after
+  -- the triggering FileType/edit settles — entering a window inside the autocmd
+  -- does not stick.
   local detect = require("beans.detect")
   local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
   if detect.should_autostart(lines, (M.config.wizard or {}).autostart) then
-    dispatch("beans.wizard", "start", { auto = true })
+    vim.schedule(function()
+      if vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_get_current_buf() == bufnr then
+        dispatch("beans.wizard", "start", { auto = true })
+      end
+    end)
   end
 end
 
