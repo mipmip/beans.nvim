@@ -33,9 +33,22 @@ with a message rather than written.
 
 ### Requirement: Parent filter-as-you-type
 The `parent` step SHALL let the user filter candidate beans by typing (fuzzy match over
-`"<id> <title>"`), move through the filtered list, select a candidate to set the parent and
+`"<id> <title>"`), move through the list, select a candidate to set the parent and
 advance, and clear an existing parent. The bean itself MUST always be excluded from
 candidates, and candidates SHALL be restricted to the configured types by default.
+
+On entry the step SHALL start with an empty filter query and render only the candidate
+list (plus the clear entry); it MUST NOT display any content carried over from a prior
+step. The step SHALL be fully operable in normal mode: the user SHALL be able to move
+the cursor with `j`/`k` (and `<C-n>`/`<C-p>`) and press `<CR>` to select the candidate
+under the cursor, without relying on insert mode having been entered. Typing still
+narrows the list. All input MUST be handled by buffer-local keymaps on the wizard
+buffer (no blocking prompt).
+
+#### Scenario: Entering the step shows no stale content
+- **WHEN** the wizard advances into the `parent` step from a previous step
+- **THEN** the card shows only the candidate list and the clear entry, and the filter
+  query is empty
 
 #### Scenario: Typing narrows the candidate list
 - **WHEN** the user types characters on the `parent` step
@@ -45,11 +58,13 @@ candidates, and candidates SHALL be restricted to the configured types by defaul
 - **WHEN** the `parent` step lists candidates
 - **THEN** the current bean's own id never appears in the list
 
-#### Scenario: Selecting a candidate sets the parent and advances
-- **WHEN** the user selects a filtered candidate
-- **THEN** the `parent` value is written to the frontmatter and the wizard advances
+#### Scenario: Selecting the candidate under the cursor in normal mode
+- **WHEN** the user moves the cursor with `j`/`k` onto a candidate and presses `<CR>` in
+  normal mode
+- **THEN** that candidate's id is written as the `parent` and the wizard advances
 
 #### Scenario: Clearing removes an existing parent
-- **WHEN** the user presses the clear key on the `parent` step for a bean that has a parent
+- **WHEN** the user selects the clear entry on the `parent` step for a bean that has a
+  parent
 - **THEN** the `parent` line is removed from the frontmatter
 

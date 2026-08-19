@@ -20,6 +20,10 @@ describe("beans config", function()
     assert.is_true(beans.config.keymaps.enabled)
   end)
 
+  it("defaults parent candidate types to milestones and epics only", function()
+    assert.are.same({ "milestone", "epic" }, config.merge().fields.parent.types)
+  end)
+
   it("merges a partial table without wiping siblings", function()
     local merged = config.merge({
       wizard = { window = { border = "single" } },

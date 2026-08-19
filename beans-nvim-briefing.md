@@ -508,7 +508,8 @@ require("beans").setup({
     },
     parent = {
       --- Candidate types. Set to nil to offer every bean.
-      types = { "milestone", "epic", "feature" },
+      --- (Refined in change fix-parent-field: milestones and epics only.)
+      types = { "milestone", "epic" },
       --- Sort candidates: "type" (milestone→epic→feature) | "recent" | "id".
       sort = "type",
     },

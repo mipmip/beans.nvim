@@ -1,11 +1,11 @@
 ---
 # beans.nvim-943x
 title: Parent step shows previous step's tags (stale filter query)
-status: todo
+status: completed
 type: bug
 priority: normal
 created_at: 2026-08-19T19:21:08Z
-updated_at: 2026-08-19T19:21:08Z
+updated_at: 2026-08-19T19:36:37Z
 parent: beans.nvim-untr
 ---
 
@@ -24,5 +24,9 @@ On entering the `parent` step the filter query starts empty and the card shows o
 the candidate list (plus the clear entry); no content from the previous step remains.
 
 ## Acceptance
-- [ ] Full 5-step flow: the `parent` card shows only candidates + clear, prompt empty.
+- [x] Full 5-step flow: the `parent` card shows only candidates + clear, prompt empty.
 - [ ] Layer-2 spec covers tags→parent transition leaving no stale line.
+
+## Summary of Changes
+Query now lives in `state.parent.query` (default ""), rendered from state — never
+seeded from the float buffer. Verified: full tags→parent flow shows no stale tag line.

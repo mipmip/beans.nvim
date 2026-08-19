@@ -240,6 +240,52 @@ describe("wizard (layer 2)", function()
       assert.are.equal(1, #wizard._state.parent.filtered)
       assert.are.equal("beans-m1", wizard._state.parent.filtered[1].id)
     end)
+
+    -- bug: normal-mode selection (j/k + <CR> on the candidate under the cursor).
+    it("selects the candidate under the cursor in normal mode", function()
+      local BEAN = { "---", "# beans-self", "title: x", "status: todo", "---", "", "b" }
+      local buf = open_bean(BEAN, { config = { wizard = { fields = { "parent" } } } })
+      wizard.start()
+      assert.are.equal("parent", wizard._state.field)
+      feed("j") -- move off "(clear)" onto the first candidate
+      feed("<CR>") -- select the candidate under the cursor
+      assert.is_nil(wizard._state)
+      assert.are.equal("beans-m1", line_value(buf, "parent"))
+    end)
+
+    -- bug: the parent card must not show the previous step's content.
+    it("shows no stale content from the previous step", function()
+      local BEAN = {
+        "---",
+        "# beans-self",
+        "title: x",
+        "status: todo",
+        "tags:",
+        "    - core",
+        "---",
+        "",
+        "b",
+      }
+      open_bean(BEAN, { config = { wizard = { fields = { "tags", "parent" } } } })
+      wizard.start()
+      feed("<Tab>") -- confirm tags -> advance to parent
+      assert.are.equal("parent", wizard._state.field)
+      assert.are.equal("", wizard._state.parent.query) -- filter starts empty
+      local lines = vim.api.nvim_buf_get_lines(wizard._state.ui.buf, 0, -1, false)
+      for _, l in ipairs(lines) do
+        assert.is_nil(l:match("%[.%]"), "stale tag checkbox on parent card: " .. l)
+      end
+      assert.is_truthy(table.concat(lines, "\n"):match("%(clear parent%)"))
+    end)
+
+    it("offers only milestones and epics by default", function()
+      local BEAN = { "---", "# beans-self", "title: x", "status: todo", "---", "", "b" }
+      open_bean(BEAN, { config = { wizard = { fields = { "parent" } } } })
+      wizard.start()
+      for _, c in ipairs(wizard._state.parent.filtered) do
+        assert.is_true(c.type == "milestone" or c.type == "epic", "unexpected type: " .. c.type)
+      end
+    end)
   end)
 
   describe("wizard has no blocking prompts (§11.0)", function()

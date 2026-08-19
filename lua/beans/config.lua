@@ -79,7 +79,9 @@ M.defaults = {
       validate = true,
     },
     parent = {
-      types = { "milestone", "epic", "feature" },
+      --- Candidate types offered as parents. Only milestones and epics by
+      --- default; set to nil to offer every bean type.
+      types = { "milestone", "epic" },
       sort = "type",
     },
   },

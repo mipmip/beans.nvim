@@ -1,11 +1,11 @@
 ---
 # beans.nvim-0v6n
 title: Parent picker does nothing on <CR> in normal mode
-status: todo
+status: completed
 type: bug
 priority: normal
 created_at: 2026-08-19T19:21:08Z
-updated_at: 2026-08-19T19:21:08Z
+updated_at: 2026-08-19T19:36:37Z
 parent: beans.nvim-untr
 ---
 
@@ -28,3 +28,8 @@ insert mode being entered.
 - [ ] Normal-mode j/k + <CR> selects the candidate under the cursor and sets parent.
 - [ ] Works both in the wizard and via `:Bean parent` / `<leader>bP`.
 - [ ] Layer-2 spec drives selection in normal mode (no insert-mode dependency).
+
+## Summary of Changes
+Parent step is now normal-mode-first: j/k (+<C-n>/<C-p>) move, <CR> selects the
+candidate under the cursor (resolved from the cursor line), x clears. Typing filter is
+optional via `/`. No dependency on startinsert. Layer-2 spec drives j+<CR>.
