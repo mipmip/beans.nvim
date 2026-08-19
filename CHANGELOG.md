@@ -7,6 +7,8 @@ breaking changes may occur on a minor bump.
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-08-19
+
 ## [0.2.0] - 2026-08-19
 
 ### Added
