@@ -6,7 +6,7 @@
 -- list with a single `nvim_buf_set_lines` so each field change is one undo step.
 --
 -- Quoting and indentation are matched to what Beans (go-yaml v3) actually emits,
--- verified against the real CLI (beans-nvim-briefing.md §2.2, §5.2, §14.1):
+-- verified against the real CLI (docs/dev/beans-nvim-briefing.md §2.2, §5.2, §14.1):
 --   * structural values (contain `:`/`#`, leading/trailing space) -> single quotes
 --   * type-ambiguous values (yes/no/true/false/null, numeric) -> double quotes
 --   * everything else -> plain

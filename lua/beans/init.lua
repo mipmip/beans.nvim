@@ -147,7 +147,7 @@ end
 
 --- Merge user options over defaults, store the resolved config, and wire up
 --- detection.
---- @param opts table|nil user configuration (see beans-nvim-briefing.md §7.3)
+--- @param opts table|nil user configuration (see docs/dev/beans-nvim-briefing.md §7.3)
 function M.setup(opts)
   local config = require("beans.config")
   M.config = config.merge(opts)

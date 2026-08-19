@@ -99,10 +99,9 @@ Non-bean markdown buffers get **zero** keymaps, autocmds, commands or popups.
 
 ## Configuration
 
-The complete default table lives in
-[`beans-nvim-briefing.md`](beans-nvim-briefing.md) §7.3. A partial table merges
-over the defaults (setting one keymap does not wipe the others), and an invalid
-value warns once and falls back rather than erroring. Highlights:
+The complete default table is documented in `:help beans-config`. A partial
+table merges over the defaults (setting one keymap does not wipe the others),
+and an invalid value warns once and falls back rather than erroring. Highlights:
 
 ```lua
 require("beans").setup({

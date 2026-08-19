@@ -7,6 +7,13 @@ breaking changes may occur on a minor bump.
 
 ## [Unreleased]
 
+### Changed
+
+- Documentation: `doc/beans.txt` (`:help beans`) is now the complete reference —
+  full configuration table, highlight groups, insert-mode completion, hooks, and a
+  detection/troubleshooting section. The README links to `:help beans-config`
+  instead of the internal design briefing, which moved to `docs/dev/`.
+
 ## [0.2.1] - 2026-08-19
 
 ## [0.2.0] - 2026-08-19

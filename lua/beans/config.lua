@@ -1,7 +1,7 @@
 -- beans.config — defaults and merge.
 --
 -- The default table below is the complete recommended configuration from
--- beans-nvim-briefing.md §7.3; per the briefing it "doubles as the spec for
+-- docs/dev/beans-nvim-briefing.md §7.3; per the briefing it "doubles as the spec for
 -- config.lua". `setup()` with no arguments must produce the intended
 -- experience, so every value here is the recommended default.
 --

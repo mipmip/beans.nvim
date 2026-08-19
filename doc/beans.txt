@@ -3,81 +3,358 @@
 ==============================================================================
 CONTENTS                                                        *beans-contents*
 
-  1. Introduction .......................... |beans-introduction|
-  2. Setup ................................. |beans-setup|
-  3. The wizard ............................ |beans-wizard|
-  4. Commands .............................. |beans-commands|
-  5. Keymaps ............................... |beans-keymaps|
-  6. Configuration ......................... |beans-config|
-  7. Health ................................ |beans-health|
+  1.  Introduction ......................... |beans-introduction|
+  2.  Requirements ......................... |beans-requirements|
+  3.  Setup ................................ |beans-setup|
+  4.  The wizard ........................... |beans-wizard|
+  5.  Commands ............................. |beans-commands|
+  6.  Keymaps .............................. |beans-keymaps|
+  7.  Configuration ........................ |beans-config|
+  8.  Highlight groups ..................... |beans-highlights|
+  9.  Completion ........................... |beans-completion|
+  10. Detection & troubleshooting .......... |beans-detection|
+  11. Health ............................... |beans-health|
+  12. Non-goals ............................ |beans-non-goals|
 
 ==============================================================================
-1. INTRODUCTION                                             *beans-introduction*
+1. INTRODUCTION                                            *beans-introduction*
 
 beans.nvim opens a small near-cursor wizard when the Beans TUI creates a bean in
 your $EDITOR, letting you set the frontmatter fields (status, type, priority,
 tags, parent) with single keystrokes, then drops you into the body in insert
 mode. All edits are made directly in the buffer, so each field is one undo step.
 
-See beans-nvim-briefing.md in the repository for the complete design spec.
+Beans is a CLI-based flat-file issue tracker:
+https://github.com/hmans/beans
 
 ==============================================================================
-2. SETUP                                                          *beans-setup*
+2. REQUIREMENTS                                            *beans-requirements*
+
+  - Neovim 0.10+
+  - The `beans` CLI on your $PATH (https://github.com/hmans/beans)
+
+The plugin has no runtime Lua dependencies. `beans` is only required at runtime
+for vocabulary discovery and candidate lookups; it is never spawned to mutate a
+bean while the file is open (see |beans-wizard|).
+
+==============================================================================
+3. SETUP                                                          *beans-setup*
 
 >lua
     require("beans").setup()
 <
-setup() with no arguments yields the intended experience. Partial option tables
-merge over the defaults; an invalid value warns once and falls back.
+setup() with no arguments yields the full intended experience. Partial option
+tables merge over the defaults (setting one keymap does not wipe the others);
+an invalid value warns once via |vim.notify| and falls back rather than
+erroring. See |beans-config| for the complete option table.
 
+With lazy.nvim: >lua
+    { "mipmip/beans.nvim", opts = {} }
+<
 ==============================================================================
-3. THE WIZARD                                                     *beans-wizard*
+4. THE WIZARD                                                    *beans-wizard*
 
 Steps, in order: status, type, priority, tags, parent.
 
 The wizard auto-starts on a freshly created bean (created_at within
-`autostart.max_age_seconds` and an empty body). Otherwise use |:BeanWizard|.
+`wizard.autostart.max_age_seconds` and an empty body). Otherwise start it with
+|:BeanWizard| or `<leader>bw`. See |beans-detection| for the auto-start rules.
+
+All mutations are direct buffer edits — the plugin never shells out to
+`beans update` while the file is open — so each field change is a single native
+undo step: after the wizard, `u` walks back through your picks one at a time.
 
 Interaction differs by field kind (a deliberate, documented inconsistency):
-  - status/type/priority: press a letter to select + confirm + auto-advance.
-  - tags: <Space> toggles, `n` adds a new tag, <CR>/<Tab> confirm.
-  - parent: type to filter, <C-n>/<C-p> move, <CR> selects.
 
-Universal keys: <Tab> accept+advance, <S-Tab> back, <CR> select, <Esc>/q finish.
+  - status/type/priority (enum): press a letter to select + confirm +
+    auto-advance. Each option has a mnemonic computed from the vocabulary Beans
+    reports, so it always matches your Beans version.
+  - tags (multi-select): `<Space>` toggles, `n` adds a new tag (validated
+    against Beans' tag rules), `<CR>`/`<Tab>` confirm and advance.
+  - parent (filter): type to filter (fuzzy over "<id> <title>"), `<C-n>`/`<C-p>`
+    move, `<CR>` selects, `x` clears an existing parent.
+
+So: no-typing steps select by letter; typing steps select by filter.
+
+Universal keys                                             *beans-wizard-keys*
+
+  <Tab>       accept the current value, advance
+  <S-Tab>     go back one step
+  <CR>        select the highlighted option, advance
+  <Esc> / q   finish the wizard entirely
+  <C-c>       finish without applying the current step
+
+<Esc> finishes rather than stepping back — the common case is "defaults are
+fine, let me write." Finishing (or advancing past the last step) drops the
+cursor into the body in insert mode.
 
 ==============================================================================
-4. COMMANDS                                                     *beans-commands*
+5. COMMANDS                                                    *beans-commands*
 
-                                                                    *:BeanWizard*
+                                                                   *:BeanWizard*
 :BeanWizard        Start the wizard at step 1.
 
-                                                                          *:Bean*
+                                                                         *:Bean*
 :Bean              Field menu, then value picker.
-:Bean {field}      Jump straight to one field (completes on field names).
+:Bean {field}      Jump straight to one field (completes on field names:
+                   status, type, priority, tags, parent).
 
 :checkhealth beans Diagnostics; see |beans-health|.
 
 ==============================================================================
-5. KEYMAPS                                                       *beans-keymaps*
+6. KEYMAPS                                                      *beans-keymaps*
 
-Buffer-local, bean buffers only (disable with `keymaps.enabled = false`):
+Buffer-local, bean buffers only (disable all with `keymaps.enabled = false`;
+override individual entries under `keymaps`):
 
   <leader>bw   start wizard
   <leader>bb   field menu
   <leader>bs   status        <leader>bt   type        <leader>bp   priority
   <leader>bg   tags          <leader>bP   parent
 
-==============================================================================
-6. CONFIGURATION                                                  *beans-config*
-
-The complete default table is documented in beans-nvim-briefing.md §7.3. Merge a
-partial table via setup(); siblings are preserved.
+Non-bean markdown buffers get zero keymaps, autocmds, commands, or popups.
 
 ==============================================================================
-7. HEALTH                                                         *beans-health*
+7. CONFIGURATION                                                 *beans-config*
+
+Merge a partial table via setup(); siblings are preserved. This is the complete
+default table (the source of truth is lua/beans/config.lua):
+
+>lua
+    require("beans").setup({
+      --- Path to the beans binary. Absolute paths are honoured as-is.
+      executable = "beans",
+
+      --- Milliseconds before a CLI read is abandoned. Reads are prefetched
+      --- and non-blocking, so this only guards against a hung process.
+      timeout = 5000,
+
+      --- Detection: which buffers become bean buffers (see |beans-detection|).
+      detect = {
+        by_path = true,     -- match files under the project's bean directory
+        by_content = true,  -- match frontmatter with a `# <id>` comment + title
+        max_lines = 5,      -- how many leading lines the content check reads
+        ignore = {},        -- patterns that are never treated as beans
+      },
+
+      wizard = {
+        --- Steps, in order. Remove entries to shorten the flow, reorder
+        --- freely. Enums are cheapest and should stay first.
+        fields = { "status", "type", "priority", "tags", "parent" },
+
+        autostart = {
+          enabled = true,
+          max_age_seconds = 30,      -- younger beans were just made by the TUI
+          require_empty_body = true, -- also require an empty body
+        },
+
+        --- Keys active inside the wizard float. Set any to false to unbind.
+        keys = {
+          next = "<Tab>",            -- accept current value, advance
+          prev = "<S-Tab>",          -- back one step
+          select = "<CR>",           -- choose highlighted option, advance
+          finish = { "<Esc>", "q" },
+          abort = "<C-c>",           -- finish without applying the current step
+          down = { "j", "<Down>", "<C-n>" },
+          up = { "k", "<Up>", "<C-p>" },
+          toggle = "<Space>",        -- tags step
+          new = "n",                 -- tags step: add a new tag
+          clear = "x",               -- parent/priority step: unset the value
+        },
+
+        --- Override generated mnemonics per field, e.g.
+        --- { status = { ["in-progress"] = "w" } }. Anything unlisted is
+        --- assigned automatically (first free letter, then digits).
+        mnemonics = {},
+
+        window = {
+          border = "rounded",
+          position = "cursor",       -- "cursor" | "center"
+          max_width = 80,
+          max_height = 16,
+          progress = true,           -- show "2/5 · type" in the title
+          footer = true,             -- show the key hints footer
+        },
+
+        hints = true,                -- show value descriptions beside options
+
+        --- Briefly highlight a value in the document after it changes.
+        flash = { enabled = true, duration_ms = 250 },
+
+        finish = {
+          insert = true,             -- drop into insert mode when the wizard ends
+          cursor = "body_end",       -- "body_end" | "body_start" | "keep"
+        },
+      },
+
+      --- Per-field behaviour.
+      fields = {
+        priority = {
+          allow_clear = true,        -- offer a "clear" entry (priority only)
+        },
+        tags = {
+          normalize = true,          -- lowercase and trim new tags
+          validate = true,           -- reject tags failing Beans' pattern
+        },
+        parent = {
+          --- Candidate types. Set to nil to offer every bean type.
+          types = { "milestone", "epic" },
+          sort = "type",             -- "type" | "recent" | "id"
+          --- Append the parent's title as a trailing YAML comment when set,
+          --- e.g. `parent: beans-0abc # Some epic`. Beans drops the comment
+          --- on its next rewrite; set false for a bare id.
+          title_comment = true,
+        },
+      },
+
+      --- Writing.
+      write = {
+        --- Set updated_at in the buffer when a field changes. Default false:
+        --- Beans owns that field, and a fresh bean does not need it.
+        touch_updated_at = false,
+        --- Quote scalar values only when YAML requires it. "always" quotes
+        --- uniformly.
+        quote = "minimal",           -- "minimal" | "always"
+      },
+
+      --- Insert-mode completion (see |beans-completion|).
+      completion = {
+        omnifunc = true,             -- buffer-local omnifunc in bean buffers
+        blink = false,               -- register a blink.cmp source if installed
+        cmp = false,                 -- register an nvim-cmp source if installed
+      },
+
+      --- Keymaps (buffer-local, bean buffers only; see |beans-keymaps|).
+      keymaps = {
+        enabled = true,
+        wizard = "<leader>bw",
+        menu = "<leader>bb",
+        fields = {
+          status = "<leader>bs",
+          type = "<leader>bt",
+          priority = "<leader>bp",
+          tags = "<leader>bg",
+          parent = "<leader>bP",
+        },
+      },
+
+      --- Escape hatches (see below).
+      hooks = {
+        on_attach = nil,             -- fun(ctx)
+        on_finish = nil,             -- fun(ctx, changed)
+      },
+
+      --- Minimum level passed to vim.notify, or false to silence the plugin.
+      notify = vim.log.levels.INFO,
+
+      --- Vocabularies: normally discovered from `beans update --help`; used
+      --- only when discovery fails or the binary is missing.
+      fallback = {
+        status = { "in-progress", "todo", "draft", "completed", "scrapped" },
+        type = { "milestone", "epic", "bug", "feature", "task" },
+        priority = { "critical", "high", "normal", "low", "deferred" },
+      },
+    })
+<
+Deliberately not configurable: the canonical frontmatter field order (it is
+Beans', not ours); that the wizard edits the buffer rather than shelling out;
+and the `# <id>` comment handling. Making any of these optional would let you
+produce files Beans does not round-trip cleanly.
+
+Hooks                                                          *beans-hooks*
+
+`hooks.on_attach(ctx)` fires after a bean buffer is detected.
+`hooks.on_finish(ctx, changed)` fires after the wizard closes.
+
+  ctx      a table { id, root, beans_dir, bufnr }
+  changed  (on_finish only) a list of the field names the wizard changed
+
+Both hooks are called with pcall, so an error in a hook cannot break the plugin.
+
+==============================================================================
+8. HIGHLIGHT GROUPS                                          *beans-highlights*
+
+Each group links to a standard group by default, so any colorscheme works
+untouched. Override with |:highlight| or `vim.api.nvim_set_hl`.
+
+  BeansWizardTitle     -> Title         float title and progress
+  BeansWizardKey       -> Special       mnemonic letters
+  BeansWizardCurrent   -> PmenuSel      the highlighted option
+  BeansWizardActive    -> DiagnosticOk  the value currently set on the bean
+  BeansWizardHint      -> Comment       value descriptions
+  BeansFieldLine       -> Visual        the frontmatter line being edited
+  BeansFlash           -> IncSearch     post-change flash
+
+==============================================================================
+9. COMPLETION                                                *beans-completion*
+
+An `omnifunc` is set buffer-locally in bean buffers only (config
+`completion.omnifunc`, default true). It completes values when the cursor is
+inside the frontmatter after a known key — on `status:`, `type:`, `priority:`,
+`parent:`, or a `tags:` list item. Outside those conditions it returns nothing
+and your normal completion works. Trigger it with |i_CTRL-X_CTRL-O|.
+
+Optional `blink.cmp` and `nvim-cmp` sources are available behind
+`completion.blink` and `completion.cmp` (both off by default, both lazily
+required, so neither becomes a hard dependency).
+
+The plugin adds no insert-mode `<Tab>` or `<CR>` mappings — they would collide
+with completion plugins. The only insert-mode moment it owns is the
+`startinsert` at the end of the wizard.
+
+==============================================================================
+10. DETECTION & TROUBLESHOOTING                              *beans-detection*
+
+A markdown buffer becomes a bean buffer when EITHER check passes:
+
+  1. Path    — the file lives under the project's bean directory. The plugin
+               walks up for `.beans.yml` (falling back to a `.beans/`
+               directory), reads `beans.path`, and confirms the file is under
+               it (including `archive/`). Controlled by `detect.by_path`.
+  2. Content — the first `detect.max_lines` lines contain `---`, a `# <id>`
+               comment, and a `title:` key. Safety net for worktrees and
+               temp-file cases. Controlled by `detect.by_content`.
+
+On a match the plugin sets `vim.b.beans = { id, root, beans_dir, bufnr }` and
+attaches the buffer-local keymaps.
+
+Why didn't the wizard fire?                          *beans-detection-autostart*
+
+Auto-start requires ALL of:
+
+  - the buffer is a recognised bean, AND
+  - created_at is within `wizard.autostart.max_age_seconds` (default 30) of now,
+    AND
+  - the body is empty or whitespace-only (`autostart.require_empty_body`).
+
+This distinguishes "the TUI just made this" from "I opened an old bean." If the
+wizard did not auto-start, one of the above was false — open an old bean and it
+stays quiet by design; start it manually with |:BeanWizard|. Set
+`wizard.autostart.enabled = false` to turn auto-start off entirely.
+
+If detection itself failed (no keymaps, `vim.b.beans` is nil), run
+`:checkhealth beans` — it explains exactly why the current buffer is or is not
+recognised. See |beans-health|.
+
+==============================================================================
+11. HEALTH                                                       *beans-health*
 
 `:checkhealth beans` reports the beans binary and version, the project root and
 bean directory, whether the current buffer is recognised (and why not if it is
-not), the discovered vocabularies, and cache state.
+not), the discovered vocabularies, and cache state. Detection failures are the
+most likely support question, so make this the first stop.
+
+==============================================================================
+12. NON-GOALS                                                 *beans-non-goals*
+
+beans.nvim deliberately does not do these — the wizard is the product, and the
+Beans TUI already covers the rest:
+
+  - a bean browser or picker over all beans (use the TUI)
+  - creating beans from within Neovim
+  - a statusline component
+  - live GraphQL/WebSocket integration with `beans serve`
+  - `--if-match` etag concurrency handling
+  - archive browsing or roadmap generation
 
 vim:tw=78:ts=8:et:ft=help:norl:

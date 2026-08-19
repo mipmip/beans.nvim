@@ -5,7 +5,7 @@
 
 local fm = require("beans.frontmatter")
 
--- A fully-populated bean, mirroring beans-nvim-briefing.md §2.1.
+-- A fully-populated bean, mirroring docs/dev/beans-nvim-briefing.md §2.1.
 local function full_bean()
   return {
     "---",

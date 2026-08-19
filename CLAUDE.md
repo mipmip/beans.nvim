@@ -4,7 +4,7 @@ This repository is a **planned but not-yet-implemented** PoC for `beans.nvim`, a
 Neovim plugin for the [Beans](https://github.com/hmans/beans) flat-file issue
 tracker. Everything needed to build it autonomously is already in place:
 
-- **The full design spec:** [`beans-nvim-briefing.md`](beans-nvim-briefing.md).
+- **The full design spec:** [`docs/dev/beans-nvim-briefing.md`](docs/dev/beans-nvim-briefing.md).
   This is ground truth for *what* to build. Read it before writing any code.
 - **The roadmap:** tracked as **beans** in `.beans/` — 5 milestones (`01`–`05`),
   each with child epics, sequenced with a `blocked-by` chain.
