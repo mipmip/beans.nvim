@@ -24,6 +24,10 @@ describe("beans config", function()
     assert.are.same({ "milestone", "epic" }, config.merge().fields.parent.types)
   end)
 
+  it("defaults fields.parent.title_comment to true", function()
+    assert.is_true(config.merge().fields.parent.title_comment)
+  end)
+
   it("merges a partial table without wiping siblings", function()
     local merged = config.merge({
       wizard = { window = { border = "single" } },

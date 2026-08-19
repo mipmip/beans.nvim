@@ -24,7 +24,7 @@ function M.setup_highlights()
   local links = {
     BeansWizardTitle = "Title",
     BeansWizardKey = "Special",
-    BeansWizardCurrent = "CursorLine",
+    BeansWizardCurrent = "PmenuSel",
     BeansWizardActive = "DiagnosticOk",
     BeansWizardHint = "Comment",
     BeansFieldLine = "Visual",
@@ -152,12 +152,17 @@ function M.render(state, model)
     option_offset = #lines
   end
 
-  -- Options.
-  for i, opt in ipairs(model.options or {}) do
+  -- Options. Layout per line: <indicator><mnemonic gap><active marker><label><hint>
+  -- The caret indicator marks the CURRENT (cursor) option; the `●` marker marks
+  -- the ACTIVE value already set on the bean — two distinct concepts. Highlight
+  -- columns are byte offsets, so they are derived from each line's own segments
+  -- (the caret and `●` are multi-byte).
+  for _, opt in ipairs(model.options or {}) do
+    local indicator = opt.current and "▸ " or "  "
     local prefix = opt.mnemonic and (opt.mnemonic .. "  ") or "   "
     local marker = opt.active and "● " or "  "
-    local text = prefix .. marker .. opt.label
-    local hint = (wcfg and true) and opt.hint or nil
+    local text = indicator .. prefix .. marker .. opt.label
+    local hint = opt.hint
     if hint and hint ~= "" then
       text = text .. "   " .. hint
     end
@@ -165,10 +170,10 @@ function M.render(state, model)
     table.insert(lines, text)
 
     if opt.mnemonic then
-      table.insert(highlights, { lnum, 0, #opt.mnemonic, HL.key })
+      table.insert(highlights, { lnum, #indicator, #indicator + #opt.mnemonic, HL.key })
     end
     if opt.active then
-      local lbl_start = #prefix + #marker
+      local lbl_start = #indicator + #prefix + #marker
       table.insert(highlights, { lnum, lbl_start, lbl_start + #opt.label, HL.active })
     end
     if hint and hint ~= "" then
@@ -179,7 +184,6 @@ function M.render(state, model)
       table.insert(highlights, { lnum, 0, -1, HL.current })
     end
     opt._line0 = lnum
-    _ = i
   end
 
   -- Footer.

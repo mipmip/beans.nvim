@@ -86,6 +86,8 @@ function M.enter(wizard, state)
     end
   end
 
+  local fcfg = (state.config.fields and state.config.fields.parent) or {}
+
   local function apply()
     pcall(vim.cmd, "stopinsert")
     if st.cursor == 0 then
@@ -93,7 +95,13 @@ function M.enter(wizard, state)
     else
       local c = st.filtered[st.cursor]
       if c then
-        wizard.set_scalar(state, "parent", c.id)
+        -- Append the parent's title as a trailing comment (bug: id alone gives
+        -- no context) unless disabled.
+        local comment = nil
+        if fcfg.title_comment ~= false and c.title ~= "" then
+          comment = c.title
+        end
+        wizard.set_scalar(state, "parent", c.id, comment)
       end
     end
     state.parent = nil

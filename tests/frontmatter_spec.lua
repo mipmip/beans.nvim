@@ -282,3 +282,48 @@ describe("frontmatter quoting (matches Beans / go-yaml v3)", function()
     assert.are.equal("title: 'it''s: mine'", title_line("it's: mine"))
   end)
 end)
+
+describe("frontmatter.set_scalar (trailing comment)", function()
+  local BEAN = {
+    "---",
+    "# beans-0001",
+    "title: A bean",
+    "status: todo",
+    "parent: beans-0002",
+    "---",
+    "",
+    "body",
+  }
+
+  local function parent_line(lines)
+    for _, l in ipairs(lines) do
+      if l:match("^parent:") then
+        return l
+      end
+    end
+  end
+
+  it("appends the comment after the serialized value", function()
+    local out = fm.set_scalar(BEAN, "parent", "beans-0003", "03 The Wizard")
+    assert.are.equal("parent: beans-0003 # 03 The Wizard", parent_line(out))
+  end)
+
+  it("does not stack comments when replacing a commented value", function()
+    local first = fm.set_scalar(BEAN, "parent", "beans-0003", "Old title")
+    local second = fm.set_scalar(first, "parent", "beans-0004", "New title")
+    assert.are.equal("parent: beans-0004 # New title", parent_line(second))
+  end)
+
+  it("is byte-identical to a plain set when no comment is given", function()
+    local with_nil = fm.set_scalar(BEAN, "parent", "beans-0003")
+    local with_empty = fm.set_scalar(BEAN, "parent", "beans-0003", "")
+    assert.are.equal("parent: beans-0003", parent_line(with_nil))
+    assert.are.same(with_nil, with_empty)
+  end)
+
+  it("keeps value quoting independent of the comment", function()
+    -- a title-with-colon value is single-quoted; the comment stays outside it
+    local out = fm.set_scalar(BEAN, "title", "a: b", "note")
+    assert.are.equal("title: 'a: b' # note", out[3])
+  end)
+end)

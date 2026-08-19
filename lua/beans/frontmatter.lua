@@ -175,12 +175,20 @@ local function list_extent(lines, block, key_idx)
   return last
 end
 
---- Set (or insert) a scalar key to `value`.
+--- Set (or insert) a scalar key to `value`, with an optional trailing comment.
+---
+--- When `comment` is given it is appended as a YAML inline comment
+--- (`key: value # comment`) AFTER the value is serialized/quoted — it is never
+--- folded into the value, so value quoting is unaffected. The line is rebuilt
+--- from scratch, so replacing a value that already carried a ` # …` comment
+--- drops the old one (comments do not stack). With no comment the output is
+--- unchanged from a plain scalar set (byte-identical to `beans update`).
 --- @param lines string[]
 --- @param key string
 --- @param value string
+--- @param comment string|nil  optional inline comment text (no leading `#`)
 --- @return string[] new_lines, boolean ok  (ok=false when the input is not a bean)
-function M.set_scalar(lines, key, value)
+function M.set_scalar(lines, key, value, comment)
   local out = copy(lines)
   local block = M.find_block(out)
   if not block then
@@ -188,6 +196,13 @@ function M.set_scalar(lines, key, value)
   end
   local idx = find_key(out, block, key)
   local rendered = key .. ": " .. M.render_value(value)
+  if comment ~= nil and comment ~= "" then
+    -- Inline comments are single-line; collapse any newlines and trim the tail.
+    local c = comment:gsub("[\r\n]+", " "):gsub("%s+$", "")
+    if c ~= "" then
+      rendered = rendered .. " # " .. c
+    end
+  end
   if idx then
     local indent = out[idx]:match("^(%s*)")
     out[idx] = indent .. rendered

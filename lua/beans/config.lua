@@ -85,6 +85,10 @@ M.defaults = {
       --- default; set to nil to offer every bean type.
       types = { "milestone", "epic" },
       sort = "type",
+      --- Append the parent's title as a trailing YAML comment when set, e.g.
+      --- `parent: beans-0abc # Some epic`. Beans drops the comment on its next
+      --- rewrite; set false for a bare id.
+      title_comment = true,
     },
   },
 

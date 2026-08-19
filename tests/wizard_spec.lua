@@ -244,12 +244,40 @@ describe("wizard (layer 2)", function()
     -- bug: normal-mode selection (j/k + <CR> on the candidate under the cursor).
     it("selects the candidate under the cursor in normal mode", function()
       local BEAN = { "---", "# beans-self", "title: x", "status: todo", "---", "", "b" }
-      local buf = open_bean(BEAN, { config = { wizard = { fields = { "parent" } } } })
+      local buf = open_bean(BEAN, {
+        config = {
+          wizard = { fields = { "parent" } },
+          fields = { parent = { title_comment = false } },
+        },
+      })
       wizard.start()
       assert.are.equal("parent", wizard._state.field)
       feed("j") -- move off "(clear)" onto the first candidate
       feed("<CR>") -- select the candidate under the cursor
       assert.is_nil(wizard._state)
+      assert.are.equal("beans-m1", line_value(buf, "parent"))
+    end)
+
+    it("writes the parent title as a trailing comment (default)", function()
+      local BEAN = { "---", "# beans-self", "title: x", "status: todo", "---", "", "b" }
+      local buf = open_bean(BEAN, { config = { wizard = { fields = { "parent" } } } })
+      wizard.start()
+      feed("j") -- first candidate (beans-m1 "Milestone one")
+      feed("<CR>")
+      assert.are.equal("beans-m1 # Milestone one", line_value(buf, "parent"))
+    end)
+
+    it("omits the comment when title_comment = false", function()
+      local BEAN = { "---", "# beans-self", "title: x", "status: todo", "---", "", "b" }
+      local buf = open_bean(BEAN, {
+        config = {
+          wizard = { fields = { "parent" } },
+          fields = { parent = { title_comment = false } },
+        },
+      })
+      wizard.start()
+      feed("j")
+      feed("<CR>")
       assert.are.equal("beans-m1", line_value(buf, "parent"))
     end)
 

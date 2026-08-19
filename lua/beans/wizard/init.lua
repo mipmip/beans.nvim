@@ -91,8 +91,8 @@ end
 -- Apply operations (called by steps)
 ----------------------------------------------------------------------
 
-function M.set_scalar(state, key, value)
-  local new = frontmatter.set_scalar(M.get_lines(state), key, value)
+function M.set_scalar(state, key, value, comment)
+  local new = frontmatter.set_scalar(M.get_lines(state), key, value, comment)
   if new and commit(state, new) then
     mark_changed(state, key)
     ui.flash(state, field_line0(state, key))

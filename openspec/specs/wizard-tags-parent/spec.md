@@ -45,6 +45,10 @@ under the cursor, without relying on insert mode having been entered. Typing sti
 narrows the list. All input MUST be handled by buffer-local keymaps on the wizard
 buffer (no blocking prompt).
 
+When `fields.parent.title_comment` is enabled, selecting a candidate SHALL write the
+`parent` value with the candidate's title as a trailing YAML inline comment
+(`parent: <id> # <title>`); when disabled, the bare id SHALL be written.
+
 #### Scenario: Entering the step shows no stale content
 - **WHEN** the wizard advances into the `parent` step from a previous step
 - **THEN** the card shows only the candidate list and the clear entry, and the filter
@@ -62,6 +66,14 @@ buffer (no blocking prompt).
 - **WHEN** the user moves the cursor with `j`/`k` onto a candidate and presses `<CR>` in
   normal mode
 - **THEN** that candidate's id is written as the `parent` and the wizard advances
+
+#### Scenario: Selecting writes the parent title as a trailing comment
+- **WHEN** `fields.parent.title_comment` is enabled and the user selects a candidate
+- **THEN** the `parent` line reads `parent: <id> # <title>`
+
+#### Scenario: Title comment can be disabled
+- **WHEN** `fields.parent.title_comment` is false and the user selects a candidate
+- **THEN** the `parent` line reads `parent: <id>` with no trailing comment
 
 #### Scenario: Clearing removes an existing parent
 - **WHEN** the user selects the clear entry on the `parent` step for a bean that has a

@@ -861,7 +861,12 @@ are the parts most likely to drift.
 - [ ] Missing optional keys are inserted in canonical order.
 - [ ] Saving produces a file byte-identical to what `beans update` would have
       produced for the same values (⚠ verify by diffing against real CLI output —
-      this is the acceptance test that matters most).
+      this is the acceptance test that matters most). Exception (change
+      `refine-parent-dialog`): when `fields.parent.title_comment` is enabled the plugin
+      appends the parent's title as a trailing YAML comment (`parent: <id> # <title>`),
+      which `beans update` does not write. This is intentional and transient (Beans
+      drops the comment on its next rewrite); the layer-3 golden test still passes
+      because it exercises the engine without requesting a comment.
 - [ ] A plain markdown file outside a Beans project gets no keymaps, no autocmds,
       no popups.
 - [ ] `:checkhealth beans` explains any detection failure.
