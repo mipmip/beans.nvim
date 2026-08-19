@@ -7,6 +7,8 @@ breaking changes may occur on a minor bump.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-19
+
 ### Added
 
 - Isolated Nix flake dev environment (plain-nix multi-system, no flake-utils) with
