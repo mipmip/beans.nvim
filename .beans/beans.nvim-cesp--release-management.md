@@ -1,13 +1,13 @@
 ---
 # beans.nvim-cesp
 title: 08 Release management
-status: todo
+status: in-progress
 type: milestone
 priority: normal
 tags:
     - management
 created_at: 2026-08-19T15:13:09Z
-updated_at: 2026-08-19T21:20:28Z
+updated_at: 2026-08-19T21:27:07Z
 ---
 
 Goal: a repeatable, manual release process and the QA gates a Neovim plugin needs

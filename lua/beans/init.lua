@@ -9,6 +9,22 @@ local M = {}
 
 local AUGROUP = "beans.nvim"
 
+--- Read the plugin version from the VERSION file at the repo root (the single
+--- source of truth bumped by scripts/release.sh). Resolved relative to this
+--- file so it works regardless of how the plugin was installed.
+local function read_version()
+  local src = debug.getinfo(1, "S").source:sub(2) -- .../lua/beans/init.lua
+  local root = vim.fn.fnamemodify(src, ":h:h:h") -- -> plugin root
+  local ok, lines = pcall(vim.fn.readfile, root .. "/VERSION")
+  if ok and lines and lines[1] and lines[1] ~= "" then
+    return vim.trim(lines[1])
+  end
+  return "unknown"
+end
+
+--- The plugin version (from the VERSION file). Shown by `:checkhealth beans`.
+M.version = read_version()
+
 --- Call `mod.fn(...)` if it exists; silently no-op otherwise. Lets detection
 --- wire keymaps and autostart to the wizard/actions before those milestones
 --- land, without erroring or emitting noise.

@@ -1,11 +1,11 @@
 ---
 # beans.nvim-k534
 title: Plugin QA gates
-status: todo
+status: in-progress
 type: epic
 priority: normal
 created_at: 2026-08-19T21:20:28Z
-updated_at: 2026-08-19T21:20:28Z
+updated_at: 2026-08-19T21:27:07Z
 parent: beans.nvim-cesp
 ---
 

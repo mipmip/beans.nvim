@@ -144,6 +144,8 @@
               pkgs.beans
               pkgs.lua-language-server
               pkgs.stylua
+              pkgs.lua51Packages.luacheck
+              pkgs.gum
             ];
 
             shellHook = ''

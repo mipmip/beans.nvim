@@ -11,7 +11,10 @@ function M.check()
   local health = vim.health
   health.start("beans.nvim")
 
-  local config = require("beans").config or require("beans.config").merge()
+  local beans = require("beans")
+  health.info(("beans.nvim version: %s"):format(beans.version or "unknown"))
+
+  local config = beans.config or require("beans.config").merge()
 
   -- Binary + version.
   local exe = config.executable or "beans"

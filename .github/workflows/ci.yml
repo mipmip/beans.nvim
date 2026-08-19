@@ -24,8 +24,16 @@ jobs:
       - uses: DeterminateSystems/magic-nix-cache-action@main
       - name: stylua --check
         run: nix develop --command stylua --check lua/ tests/ plugin/
+      - name: luacheck
+        run: nix develop --command luacheck lua/ tests/ plugin/
       - name: Test suite (layers 1-4)
         run: nix develop --command bash scripts/test.sh tests/
+      - name: Help tags freshness
+        run: |
+          tmp=$(mktemp -d); cp doc/*.txt "$tmp/"
+          nix develop --command nvim --clean --headless -c "helptags $tmp" -c "qa!"
+          diff -q doc/tags "$tmp/tags" \
+            || { echo "doc/tags is stale — run :helptags doc and commit"; exit 1; }
 
   # Cross-version safety net for the parts most likely to drift (floats,
   # vim.system): layers 1-2 only, which need neither the beans binary nor nix.
@@ -51,3 +59,7 @@ jobs:
             cp "tests/${f}_spec.lua" .ci-specs/ 2>/dev/null || true
           done
           bash scripts/test.sh .ci-specs
+      # Minimal-install smoke: the action-setup-vim neovim is a genuinely clean
+      # nvim (no dev flake), so this verifies the plugin activates for real users.
+      - name: Minimal-install smoke test
+        run: bash scripts/smoke.sh

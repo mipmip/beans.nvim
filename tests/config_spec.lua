@@ -28,6 +28,13 @@ describe("beans config", function()
     assert.is_true(config.merge().fields.parent.title_comment)
   end)
 
+  it("exposes the version from the VERSION file", function()
+    local v = require("beans").version
+    assert.is_string(v)
+    assert.are_not.equal("unknown", v)
+    assert.is_truthy(v:match("^%d+%.%d+%.%d+$"))
+  end)
+
   it("merges a partial table without wiping siblings", function()
     local merged = config.merge({
       wizard = { window = { border = "single" } },

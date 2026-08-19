@@ -65,7 +65,6 @@ describe("beans.nvim end-to-end", function()
     end
     if not saw_created then
       table.insert(fm, close, "created_at: " .. now_utc())
-      close = close + 1
     end
     table.insert(fm, "") -- empty body
     vim.fn.writefile(fm, bean.path)
