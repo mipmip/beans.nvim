@@ -48,6 +48,12 @@
 
           vim.g.mapleader = " "
 
+          -- Activate the plugin in the dev editor (a real user calls this from
+          -- their own config). Guarded so a load error never breaks nvim.
+          pcall(function()
+            require("beans").setup()
+          end)
+
           -- Quick reload function for development.
           _G.reload_beans = function()
             for name, _ in pairs(package.loaded) do
@@ -58,6 +64,9 @@
             vim.cmd("runtime! plugin/*.lua")
             vim.cmd("runtime! plugin/*.vim")
             vim.cmd("runtime! after/plugin/*.lua")
+            pcall(function()
+              require("beans").setup()
+            end)
             local path = vim.fn.getenv("BEANS_NVIM_DEV_PATH") or "${beansPluginPath}"
             print("beans.nvim reloaded from: " .. path)
           end
