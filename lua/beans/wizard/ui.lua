@@ -49,8 +49,8 @@ function M.open(state)
   vim.bo[buf].bufhidden = "wipe"
   vim.bo[buf].filetype = "beans-wizard"
 
-  local width = math.min(wcfg.max_width or 60, math.max(30, vim.o.columns - 4))
-  local height = wcfg.max_height or 12
+  local width = math.min(wcfg.max_width or 80, math.max(30, vim.o.columns - 4))
+  local height = wcfg.max_height or 16
   local opts = {
     relative = (wcfg.position == "center") and "editor" or "cursor",
     width = width,
@@ -88,14 +88,30 @@ function M.close(state)
   state.ui = nil
 end
 
---- Resize the float to fit `nlines` (bounded by max_height).
+--- Resize the float height to fit `nlines` (bounded by max_height).
 local function fit_height(state, nlines)
   if not M.is_open(state) then
     return
   end
   local wcfg = (state.config.wizard and state.config.wizard.window) or {}
-  local h = math.max(1, math.min(nlines, wcfg.max_height or 12))
+  local h = math.max(1, math.min(nlines, wcfg.max_height or 16))
   pcall(vim.api.nvim_win_set_height, state.ui.win, h)
+end
+
+--- Resize the float width to fit the widest rendered line (bounded by
+--- max_width and the available columns), so long footers/candidates aren't cut.
+local function fit_width(state, lines)
+  if not M.is_open(state) then
+    return
+  end
+  local wcfg = (state.config.wizard and state.config.wizard.window) or {}
+  local cap = math.min(wcfg.max_width or 80, math.max(20, vim.o.columns - 4))
+  local w = 24 -- a sensible minimum
+  for _, l in ipairs(lines) do
+    w = math.max(w, vim.fn.strdisplaywidth(l))
+  end
+  w = math.min(w + 1, cap) -- +1 so the last glyph isn't flush against the border
+  pcall(vim.api.nvim_win_set_width, state.ui.win, w)
 end
 
 --- Render a step model into the float.
@@ -189,6 +205,7 @@ function M.render(state, model)
     })
   end
 
+  fit_width(state, lines)
   fit_height(state, #lines)
 
   state.ui.option_offset = option_offset

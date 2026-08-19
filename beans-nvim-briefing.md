@@ -466,8 +466,8 @@ require("beans").setup({
       border = "rounded",
       --- "cursor" anchors near the field being edited; "center" is fixed.
       position = "cursor",
-      max_width = 60,
-      max_height = 12,
+      max_width = 80,
+      max_height = 16,
       --- Show "2/5 · type" in the title.
       progress = true,
       --- Show the key hints footer.

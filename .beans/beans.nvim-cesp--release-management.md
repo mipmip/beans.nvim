@@ -7,7 +7,7 @@ priority: normal
 tags:
     - management
 created_at: 2026-08-19T15:13:09Z
-updated_at: 2026-08-19T19:10:30Z
+updated_at: 2026-08-19T20:00:40Z
 parent: beans.nvim-hrpy
 ---
 

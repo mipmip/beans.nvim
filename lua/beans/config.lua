@@ -54,8 +54,10 @@ M.defaults = {
     window = {
       border = "rounded",
       position = "cursor",
-      max_width = 60,
-      max_height = 12,
+      --- The float grows to fit its content up to these caps; long footers and
+      --- candidate lines no longer get clipped.
+      max_width = 80,
+      max_height = 16,
       progress = true,
       footer = true,
     },
