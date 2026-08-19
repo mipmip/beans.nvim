@@ -120,6 +120,10 @@ function M.setup(opts)
 
   create_autocmds()
 
+  vim.api.nvim_create_user_command("BeanWizard", function()
+    require("beans.wizard").start()
+  end, { desc = "Start the beans wizard" })
+
   -- Handle buffers already loaded when setup() runs (e.g. lazy-load).
   for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
     if vim.api.nvim_buf_is_loaded(bufnr) and vim.bo[bufnr].filetype == "markdown" then

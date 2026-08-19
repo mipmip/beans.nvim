@@ -1,11 +1,11 @@
 ---
 # beans.nvim-slzt
 title: 03 The Wizard
-status: todo
+status: completed
 type: milestone
 priority: normal
 created_at: 2026-08-19T13:13:11Z
-updated_at: 2026-08-19T13:13:12Z
+updated_at: 2026-08-19T14:17:30Z
 blocked_by:
     - beans.nvim-diz4
 ---
@@ -28,3 +28,10 @@ Tracked as OpenSpec change: `build-wizard`.
 - No blocking prompt anywhere in the wizard path (§11.0).
 
 See briefing §4, §5, §11.0.
+
+## Summary of Changes
+
+The wizard — the product — is working end to end in-process: three interaction modes,
+buffer-only edits, one undo per field (five undos restore), <Esc> finishes from any step,
+finish lands in the body. 69 unit+wizard specs green; no blocking prompts (grep-tested).
+OpenSpec change build-wizard archived; specs synced.

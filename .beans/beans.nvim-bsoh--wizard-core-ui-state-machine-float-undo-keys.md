@@ -1,11 +1,11 @@
 ---
 # beans.nvim-bsoh
 title: Wizard core & UI (state machine, float, undo, keys)
-status: todo
+status: completed
 type: epic
 priority: normal
 created_at: 2026-08-19T13:13:12Z
-updated_at: 2026-08-19T13:13:12Z
+updated_at: 2026-08-19T14:17:30Z
 parent: beans.nvim-slzt
 blocked_by:
     - beans.nvim-888o
@@ -29,3 +29,14 @@ blocked_by:
 - [ ] <Esc> exits from every step; float cleaned up (no leaked win/keymap).
 
 Briefing §4.1, §4.3, §4.4, §5, §7.4, §11.0, §11.2.
+
+## Summary of Changes
+
+- `wizard/init.lua`: state machine over configured `fields`; one-undo-per-field via
+  undo-break + single nvim_buf_set_lines; universal keys (back/finish/abort); finish
+  positions cursor on a body line + startinsert; autostart wiring; async prefetch +
+  refresh; :BeanWizard command.
+- `wizard/ui.lua`: near-cursor float, data-driven render (title/progress/options/footer/
+  prompt), BeansWizard* highlight groups (linked to standard groups), field-line
+  highlight + flash.
+- No blocking prompts anywhere (grep-as-test green).
