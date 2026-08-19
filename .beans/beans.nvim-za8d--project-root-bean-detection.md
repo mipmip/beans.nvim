@@ -1,11 +1,11 @@
 ---
 # beans.nvim-za8d
 title: Project root & bean detection
-status: todo
+status: completed
 type: epic
 priority: normal
 created_at: 2026-08-19T13:13:12Z
-updated_at: 2026-08-19T13:13:12Z
+updated_at: 2026-08-19T13:58:16Z
 parent: beans.nvim-diz4
 blocked_by:
     - beans.nvim-qmll
@@ -25,3 +25,14 @@ blocked_by:
 - [ ] Auto-start heuristic: fresh empty bean fires; old/bodied/disabled does not.
 
 Briefing §6, §6.1, §11.1(3-4).
+
+## Summary of Changes
+
+- `project.lua`: upward search for `.beans.yml` (fallback `.beans/`), hand-rolled
+  `beans.path` reader, `beans_dir`/`locate`. `detect.lua`: OR'd path + content checks,
+  `content_id`, archive-aware `is_under`, ignore patterns; sets `vim.b.beans`.
+- Auto-start heuristic (`should_autostart` + `parse_created_at`/`body_is_empty`), UTC-safe.
+- `health.lua` basic `:checkhealth beans` (binary+version, root, dir, recognised?/why-not).
+- `init.lua` wiring: FileType-markdown detection autocmd, attach (vim.b.beans, prefetch,
+  keymaps, on_attach, autostart), BufWritePost list-cache invalidation.
+- Tests: project_spec (6), detect_spec (13, incl. zero-footprint + autostart). All green.

@@ -1,11 +1,11 @@
 ---
 # beans.nvim-888o
 title: Frontmatter engine (pure, canonical order)
-status: todo
+status: completed
 type: epic
 priority: normal
 created_at: 2026-08-19T13:13:12Z
-updated_at: 2026-08-19T13:13:12Z
+updated_at: 2026-08-19T13:58:16Z
 parent: beans.nvim-diz4
 blocked_by:
     - beans.nvim-w3rq
@@ -28,3 +28,12 @@ blocked_by:
 - [ ] Golden equivalence hooks ready for layer 3.
 
 Briefing §2.2, §5.2, §11.1(1), verify §14.1.
+
+## Summary of Changes
+
+- `frontmatter.lua`: pure line-list engine — `find_block`, `set_scalar` (replace or
+  canonical-order insert), `clear_scalar`, `set_list`/`clear_list` (tags block seq),
+  minimal quoting. Grounded against the real CLI: 4-space tag indent, Beans quoting
+  styles; preserves `# <id>`/created_at/updated_at/order; byte-identical no-op.
+- `frontmatter_spec.lua` (26 specs) covering every insert gap, clears, tag lists,
+  tricky titles, and no-op. All green.

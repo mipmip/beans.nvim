@@ -1,11 +1,11 @@
 ---
 # beans.nvim-w3rq
 title: CLI & schema layer (async reads, vocab, prefetch, cache)
-status: todo
+status: completed
 type: epic
 priority: normal
 created_at: 2026-08-19T13:13:12Z
-updated_at: 2026-08-19T13:13:12Z
+updated_at: 2026-08-19T13:58:16Z
 parent: beans.nvim-diz4
 blocked_by:
     - beans.nvim-za8d
@@ -27,3 +27,14 @@ blocked_by:
 - [ ] Loading state shown when a step is reached before data lands.
 
 Briefing §2.3, §5.3, §11.1(2), verify §14.4/§14.5.
+
+## Summary of Changes
+
+- `cli.lua`: async `vim.system` wrapper (never `:wait()`), JSON decode, cwd=root,
+  `--beans-path`, graceful degradation when the binary is missing.
+- `schema.lua`: vocab discovery from `beans update --help` (§2.3 rule, drops
+  `or empty to clear`), fallback table; dynamic mnemonics (letter → next letter →
+  digits); per-root vocab cache (session) + list cache (30s TTL) + prefetch +
+  `invalidate_list`; static hint table.
+- `tests/fixtures/fake-beans` functional stub; schema_spec (9): parsing, fallback,
+  mnemonics incl. digit fallthrough, async discovery. All green.

@@ -1,11 +1,11 @@
 ---
 # beans.nvim-diz4
 title: 02 Detection & Data Layer
-status: todo
+status: completed
 type: milestone
 priority: normal
 created_at: 2026-08-19T13:13:11Z
-updated_at: 2026-08-19T13:13:11Z
+updated_at: 2026-08-19T13:58:26Z
 blocked_by:
     - beans.nvim-j5je
 ---
@@ -26,3 +26,11 @@ Tracked as OpenSpec change: `build-data-layer`.
   order, byte-identically to `beans update` (§2.2, §5.2).
 
 See briefing §2, §5, §6.
+
+## Summary of Changes
+
+Detection & data layer complete. Bean buffers are recognised by path OR content and
+carry `vim.b.beans`; plain markdown gets zero footprint. Async CLI reads feed vocab
+discovery (with fallback) and prefetch/caching; the pure frontmatter engine performs
+canonical-order edits byte-identically to `beans update`. 57 unit specs green.
+OpenSpec change `build-data-layer` archived; specs synced.
