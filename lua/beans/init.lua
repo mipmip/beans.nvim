@@ -59,6 +59,11 @@ function M.attach(ctx)
 
   attach_keymaps(bufnr, M.config)
 
+  -- Insert-mode completion: set the buffer-local omnifunc in bean buffers only.
+  if (M.config.completion or {}).omnifunc ~= false then
+    dispatch("beans.completion", "setup_buffer", bufnr)
+  end
+
   -- on_attach hook.
   local hooks = M.config.hooks or {}
   if type(hooks.on_attach) == "function" then
@@ -118,11 +123,40 @@ function M.setup(opts)
   local config = require("beans.config")
   M.config = config.merge(opts)
 
+  -- Validate and, for any invalid value, warn once and fall back — never error.
+  local _, warnings = config.validate(M.config)
+  local level = M.config.notify
+  if level ~= false then
+    for _, w in ipairs(warnings) do
+      if type(level) ~= "number" or vim.log.levels.WARN >= level then
+        vim.notify(w, vim.log.levels.WARN)
+      end
+    end
+  end
+
   create_autocmds()
 
   vim.api.nvim_create_user_command("BeanWizard", function()
     require("beans.wizard").start()
   end, { desc = "Start the beans wizard" })
+
+  vim.api.nvim_create_user_command("Bean", function(cmd)
+    local actions = require("beans.actions")
+    if cmd.args == nil or cmd.args == "" then
+      actions.menu()
+    else
+      actions.field(cmd.args)
+    end
+  end, {
+    nargs = "?",
+    complete = function()
+      return { "status", "type", "priority", "tags", "parent" }
+    end,
+    desc = "Beans: field menu, or jump to a field",
+  })
+
+  -- Register optional insert-mode completion sources (blink/cmp), if enabled.
+  dispatch("beans.completion", "register_sources", M.config)
 
   -- Handle buffers already loaded when setup() runs (e.g. lazy-load).
   for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do

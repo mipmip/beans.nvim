@@ -31,12 +31,27 @@ function M.check()
   -- Current buffer.
   local bufnr = vim.api.nvim_get_current_buf()
   local detect = require("beans.detect")
+  local schema = require("beans.schema")
   local ctx = detect.detect(bufnr, config)
   if ctx then
     health.ok(("current buffer is a recognised bean: %s"):format(ctx.id or "<unknown id>"))
     if ctx.root then
       health.info(("project root: %s"):format(ctx.root))
       health.info(("bean directory: %s"):format(ctx.beans_dir))
+
+      -- Discovered vocabularies + cache state.
+      local vocab = schema._vocab_cache[ctx.root]
+      if vocab then
+        for _, f in ipairs({ "status", "type", "priority" }) do
+          if vocab[f] then
+            health.info(("vocab.%s: %s"):format(f, table.concat(vocab[f], ", ")))
+          end
+        end
+      else
+        health.info("vocabularies: not yet discovered (will prefetch on open)")
+      end
+      local list = schema._list_cache[ctx.root]
+      health.info(("list cache: %s"):format(list and (#list.data .. " beans cached") or "empty"))
     else
       health.info("recognised by content (no project root on disk)")
     end

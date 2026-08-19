@@ -131,4 +131,44 @@ function M.merge(opts)
   return vim.tbl_deep_extend("force", vim.deepcopy(M.defaults), opts or {})
 end
 
+-- Expected types for the top-level keys, used by validate().
+local EXPECTED = {
+  executable = "string",
+  timeout = "number",
+  detect = "table",
+  wizard = "table",
+  fields = "table",
+  write = "table",
+  completion = "table",
+  keymaps = "table",
+  hooks = "table",
+  fallback = "table",
+}
+
+--- Validate a merged config in place: for each known key whose value has the
+--- wrong type, substitute the default and record a warning. Never errors.
+--- @param cfg table  a merged config (mutated in place)
+--- @return table cfg, string[] warnings
+function M.validate(cfg)
+  local warnings = {}
+  for key, typ in pairs(EXPECTED) do
+    if cfg[key] ~= nil and type(cfg[key]) ~= typ then
+      table.insert(
+        warnings,
+        string.format("beans.nvim: config.%s should be a %s — using the default", key, typ)
+      )
+      cfg[key] = vim.deepcopy(M.defaults[key])
+    end
+  end
+  -- `notify` is a log level (number) or false.
+  if cfg.notify ~= nil and type(cfg.notify) ~= "number" and cfg.notify ~= false then
+    table.insert(
+      warnings,
+      "beans.nvim: config.notify should be a log level or false — using the default"
+    )
+    cfg.notify = M.defaults.notify
+  end
+  return cfg, warnings
+end
+
 return M

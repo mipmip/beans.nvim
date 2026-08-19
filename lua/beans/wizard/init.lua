@@ -269,8 +269,8 @@ function M.start(opts)
   end
 
   local cfg = config()
-  local fields =
-    vim.deepcopy((cfg.wizard and cfg.wizard.fields) or { "status", "type", "priority" })
+  local fields = opts.fields
+    or vim.deepcopy((cfg.wizard and cfg.wizard.fields) or { "status", "type", "priority" })
 
   local state = {
     bufnr = bufnr,

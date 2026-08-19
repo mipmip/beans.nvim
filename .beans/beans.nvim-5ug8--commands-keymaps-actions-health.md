@@ -1,11 +1,11 @@
 ---
 # beans.nvim-5ug8
 title: Commands, keymaps, actions & health
-status: todo
+status: completed
 type: epic
 priority: normal
 created_at: 2026-08-19T13:13:12Z
-updated_at: 2026-08-19T13:13:13Z
+updated_at: 2026-08-19T14:23:47Z
 parent: beans.nvim-7lvg
 blocked_by:
     - beans.nvim-62q6
@@ -25,3 +25,12 @@ blocked_by:
 - [ ] `:checkhealth beans` explains a detection failure.
 
 Briefing §7.1, §7.2, §5.1, §6, §12.
+
+## Summary of Changes
+
+- Commands: :BeanWizard, :Bean (menu) and :Bean <field> (field-name completion).
+- actions.lua: field()/menu() use the buffer-edit wizard path when on a bean (vim.ui.select
+  for the menu, stubbable); cli_update() is the not-open CLI fallback.
+- health.lua: binary+version, root, bean dir, recognised?/why-not, discovered vocab, cache
+  state. Buffer-local keymaps (§7.2, disable-able/overridable); on_attach/on_finish hooks.
+  actions_spec: 4 specs green.
