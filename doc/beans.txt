@@ -1,0 +1,29 @@
+*beans.txt*                     A Neovim companion for the Beans issue tracker
+
+==============================================================================
+CONTENTS                                                        *beans-contents*
+
+  1. Introduction ............................ |beans-introduction|
+  2. Setup ................................... |beans-setup|
+
+Full documentation is written in Milestone 05. This is a stub so `:help beans`
+resolves during development.
+
+==============================================================================
+1. INTRODUCTION                                             *beans-introduction*
+
+beans.nvim opens a small wizard when the Beans TUI creates a bean in your
+$EDITOR, letting you set frontmatter fields with single keystrokes.
+
+See beans-nvim-briefing.md in the repository for the complete design spec.
+
+==============================================================================
+2. SETUP                                                          *beans-setup*
+
+>lua
+    require("beans").setup()
+<
+
+`setup()` with no arguments yields the intended experience.
+
+vim:tw=78:ts=8:ft=help:norl:

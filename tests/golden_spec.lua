@@ -1,0 +1,2 @@
+-- golden_spec.lua — placeholder; specs added in Milestone 05 (golden-equivalence).
+-- Kept as a valid empty spec so the suite stays green until then.

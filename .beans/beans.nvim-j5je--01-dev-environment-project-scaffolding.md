@@ -1,10 +1,11 @@
 ---
 # beans.nvim-j5je
 title: 01 Dev Environment & Project Scaffolding
-status: todo
+status: completed
 type: milestone
+priority: normal
 created_at: 2026-08-19T13:13:11Z
-updated_at: 2026-08-19T13:13:11Z
+updated_at: 2026-08-19T13:37:06Z
 ---
 
 Goal: `nix develop` yields a self-contained, isolated Neovim with the `beans`
@@ -22,3 +23,10 @@ Tracked as OpenSpec change: `bootstrap-dev-environment`.
 - Module tree of §9 exists as stubs; `stylua --check` passes; `.dev/` gitignored.
 
 See `beans-nvim-briefing.md` §9, §10.
+
+## Summary of Changes
+
+Dev environment and scaffolding complete. `nix develop` yields an isolated NixVim
+with `beans` 0.4.2; the §9 module tree exists as loadable stubs; `stylua --check`
+passes and the test suite runs green. OpenSpec change `bootstrap-dev-environment`
+archived; specs `dev-environment` and `project-scaffolding` synced to openspec/specs/.

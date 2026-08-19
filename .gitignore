@@ -1,0 +1,5 @@
+# Isolated dev environment created by `nix develop` (see flake.nix shellHook).
+.dev/
+
+# Direnv
+.direnv/

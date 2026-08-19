@@ -1,11 +1,11 @@
 ---
 # beans.nvim-85rb
 title: Nix flake dev environment (plain nix, multi-system)
-status: todo
+status: completed
 type: epic
 priority: normal
 created_at: 2026-08-19T13:13:12Z
-updated_at: 2026-08-19T13:13:12Z
+updated_at: 2026-08-19T13:36:36Z
 parent: beans.nvim-j5je
 ---
 
@@ -33,3 +33,12 @@ systems (NO flake-utils) — iterate a `systems` list and build per-system outpu
 - [ ] `flake.nix` uses plain nix per-system (no flake-utils); flake.lock committed.
 
 Briefing §10, verify item §14.3.
+
+## Summary of Changes
+
+- `flake.nix`: plain-nix multi-system (x86_64/aarch64 linux+darwin via `genAttrs`,
+  no flake-utils); NixVim via `makeNixvimWithModule`; `beans` (nixpkgs v0.4.2) in both
+  the editor env and the devShell; reload/test keymaps; XDG isolation into `.dev/`;
+  `apps.default` for `nix run`.
+- `flake.lock` committed. Verified: `nix develop` opens an isolated nvim and
+  `beans version` prints 0.4.2 inside the shell.

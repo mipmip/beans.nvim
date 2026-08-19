@@ -1,0 +1,2 @@
+-- wizard_spec.lua — placeholder; specs added in Milestone 03 (build-wizard).
+-- Kept as a valid empty spec so the suite stays green until then.

@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# fake-beans — a hermetic stand-in for the real `beans` CLI used by unit specs.
+#
+# It emits canned output for the small surface the plugin reads (§2.5):
+#   beans update --help   -> vocabulary discovery (§2.3)
+#   beans list --json     -> tag universe + parent/blocker candidates
+#   beans show <id> --json
+#   beans version
+#
+# Later milestones (see the `unit-wizard-tests` OpenSpec change) may extend this.
+# Keep the vocab text byte-compatible with what Cobra prints so §2.3 parsing is
+# exercised realistically, including the "or empty to clear" tail on --priority.
+set -euo pipefail
+
+# Drop global flags we don't care about (e.g. --beans-path <dir>).
+args=()
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --beans-path|--config) shift 2 ;;
+    *) args+=("$1"); shift ;;
+  esac
+done
+set -- "${args[@]:-}"
+
+cmd="${1:-}"; shift || true
+
+case "$cmd" in
+  version)
+    echo "beans version v0.4.2 (fake)"
+    ;;
+  update)
+    # Only the --help path is used by the plugin (mutations go through buffer edits).
+    cat <<'EOF'
+Updates one or more properties of an existing bean.
+
+Usage:
+  beans update <id> [flags]
+
+Flags:
+  -s, --status string     New status (in-progress, todo, draft, completed, scrapped)
+  -t, --type string       New type (milestone, epic, bug, feature, task)
+  -p, --priority string   New priority (critical, high, normal, low, deferred, or empty to clear)
+      --title string      New title
+      --parent string     Set parent bean ID
+      --tag stringArray   Add tag (can be repeated)
+EOF
+    ;;
+  list)
+    # Flat JSON array of bean objects, no envelope (§2.5).
+    cat <<'EOF'
+[
+  {"id":"beans-0001","title":"Root milestone","status":"todo","type":"milestone","tags":["core"]},
+  {"id":"beans-0002","title":"An epic","status":"in-progress","type":"epic","tags":["core","ui"],"parent":"beans-0001"},
+  {"id":"beans-0003","title":"A feature","status":"todo","type":"feature","tags":["ui"],"parent":"beans-0002"}
+]
+EOF
+    ;;
+  show)
+    cat <<'EOF'
+{"id":"beans-0003","title":"A feature","status":"todo","type":"feature","priority":"normal","tags":["ui"],"parent":"beans-0002"}
+EOF
+    ;;
+  *)
+    echo "fake-beans: unhandled command: ${cmd}" >&2
+    exit 1
+    ;;
+esac

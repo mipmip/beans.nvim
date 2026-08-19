@@ -1,0 +1,2 @@
+-- schema_spec.lua — placeholder; specs added in Milestone 02 (cli-schema).
+-- Kept as a valid empty spec so the suite stays green until then.

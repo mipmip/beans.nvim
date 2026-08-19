@@ -1,0 +1,2 @@
+-- detect_spec.lua — placeholder; specs added in Milestone 02 (bean-detection).
+-- Kept as a valid empty spec so the suite stays green until then.
