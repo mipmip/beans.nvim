@@ -39,11 +39,18 @@ local function open_bean(lines, opts)
   local ctx = { id = "beans-self", root = ROOT, beans_dir = ROOT .. "/.beans", bufnr = buf }
   vim.b[buf].beans = ctx
 
-  -- Seed caches so data is available synchronously.
+  -- Seed caches so data is available synchronously. `discovered` says whether
+  -- Beans reported the vocabulary or the fallback table stood in for it; only a
+  -- reported vocabulary may judge a configured default.
   schema._vocab_cache[ROOT] = {
     status = cfg.fallback.status,
     type = cfg.fallback.type,
     priority = cfg.fallback.priority,
+    discovered = {
+      status = opts.discovered or false,
+      type = opts.discovered or false,
+      priority = opts.discovered or false,
+    },
   }
   schema._list_cache[ROOT] = { data = CANNED_LIST, at = (vim.uv or vim.loop).now() }
   return buf
@@ -335,5 +342,214 @@ describe("wizard (layer 2)", function()
         end
       end
     end)
+  end)
+end)
+
+describe("wizard enum defaults", function()
+  -- What `beans create` actually writes: status and type from .beans.yml, and no
+  -- priority key at all, because Beans has no default_priority.
+  local NO_PRIORITY = {
+    "---",
+    "# beans-self",
+    "title: This bean",
+    "status: todo",
+    "type: task",
+    "---",
+    "",
+    "body",
+  }
+
+  -- Index of "normal" in the seeded priority vocabulary:
+  -- critical, high, normal, low, deferred.
+  local NORMAL_INDEX = 3
+
+  local function priority_only(field_opts)
+    return {
+      config = {
+        wizard = { fields = { "priority" }, finish = { insert = false } },
+        fields = { priority = field_opts },
+      },
+    }
+  end
+
+  local orig_notify
+
+  before_each(function()
+    orig_notify = vim.notify
+    schema._default_warned = {}
+  end)
+
+  after_each(function()
+    vim.notify = orig_notify
+    if wizard._state then
+      wizard.finish(wizard._state)
+    end
+    vim.cmd("silent! stopinsert")
+  end)
+
+  local function capture_notifies()
+    local notes = {}
+    vim.notify = function(msg, lvl)
+      table.insert(notes, { msg = msg, lvl = lvl })
+    end
+    return notes
+  end
+
+  it("starts the cursor on the configured default when the field is unset", function()
+    open_bean(NO_PRIORITY, priority_only({ default = "normal" }))
+    wizard.start()
+    assert.are.equal("priority", wizard._state.field)
+    assert.are.equal(NORMAL_INDEX, wizard._state.cursor)
+  end)
+
+  it("opening the step writes nothing", function()
+    local buf = open_bean(NO_PRIORITY, priority_only({ default = "normal" }))
+    local before = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+    wizard.start()
+    assert.are.same(before, vim.api.nvim_buf_get_lines(buf, 0, -1, false))
+    assert.is_nil(line_value(buf, "priority"))
+  end)
+
+  it("<Tab> past a defaulted field leaves it unset", function()
+    local buf = open_bean(NO_PRIORITY, priority_only({ default = "normal" }))
+    wizard.start()
+    feed("<Tab>") -- the only field, so this advances past the end and finishes
+    assert.is_nil(line_value(buf, "priority"))
+    assert.is_nil(wizard._state)
+  end)
+
+  it("<CR> on a defaulted field writes the default", function()
+    local buf = open_bean(NO_PRIORITY, priority_only({ default = "normal" }))
+    wizard.start()
+    feed("<CR>")
+    assert.are.equal("normal", line_value(buf, "priority"))
+  end)
+
+  it("starts on the first option when no default is configured", function()
+    open_bean(NO_PRIORITY, priority_only({}))
+    wizard.start()
+    assert.are.equal(1, wizard._state.cursor)
+  end)
+
+  it("a value already set wins over the configured default", function()
+    local set = vim.deepcopy(NO_PRIORITY)
+    table.insert(set, 6, "priority: high")
+    open_bean(set, priority_only({ default = "normal" }))
+    wizard.start()
+    assert.are.equal(2, wizard._state.cursor) -- high, not normal
+  end)
+
+  it("a set but unrecognised value suppresses the default", function()
+    local set = vim.deepcopy(NO_PRIORITY)
+    table.insert(set, 6, "priority: urgent")
+    open_bean(set, priority_only({ default = "normal" }))
+    wizard.start()
+    -- The field is set, so the default must not take over the cursor even though
+    -- no option matches the value in the file.
+    assert.are.equal(1, wizard._state.cursor)
+  end)
+
+  it("places the cursor on a default for status too", function()
+    open_bean({
+      "---",
+      "# beans-self",
+      "title: This bean",
+      "type: task",
+      "---",
+      "",
+      "body",
+    }, {
+      config = {
+        wizard = { fields = { "status" }, finish = { insert = false } },
+        fields = { status = { default = "draft" } },
+      },
+    })
+    wizard.start()
+    assert.are.equal(3, wizard._state.cursor) -- in-progress, todo, draft
+  end)
+
+  it("warns once and falls back when the default is outside the vocabulary", function()
+    local opts = priority_only({ default = "urgent" })
+    opts.discovered = true
+    open_bean(NO_PRIORITY, opts)
+    local notes = capture_notifies()
+    wizard.start()
+    assert.are.equal(1, #notes)
+    assert.is_truthy(notes[1].msg:match("fields%.priority%.default"))
+    assert.is_truthy(notes[1].msg:match("urgent"))
+    assert.is_truthy(notes[1].msg:match("critical")) -- names the accepted values
+    assert.are.equal(vim.log.levels.WARN, notes[1].lvl)
+    assert.are.equal(1, wizard._state.cursor)
+  end)
+
+  it("does not repeat the warning when the step re-renders", function()
+    local opts = priority_only({ default = "urgent" })
+    opts.discovered = true
+    open_bean(NO_PRIORITY, opts)
+    local notes = capture_notifies()
+    wizard.start()
+    wizard.refresh(wizard._state)
+    wizard.refresh(wizard._state)
+    assert.are.equal(1, #notes)
+  end)
+
+  it("does not repeat the warning on a later wizard in the same project", function()
+    local opts = priority_only({ default = "urgent" })
+    opts.discovered = true
+    open_bean(NO_PRIORITY, opts)
+    local notes = capture_notifies()
+    wizard.start()
+    wizard.finish(wizard._state)
+    open_bean(NO_PRIORITY, opts)
+    wizard.start()
+    assert.are.equal(1, #notes)
+  end)
+
+  it("stays silent while the fallback table is standing in", function()
+    -- discovered is false: Beans never reported this vocabulary, so a later
+    -- render might still find the value and the warning would be retracted.
+    local opts = priority_only({ default = "urgent" })
+    opts.discovered = false
+    open_bean(NO_PRIORITY, opts)
+    local notes = capture_notifies()
+    wizard.start()
+    assert.are.equal(0, #notes)
+    assert.are.equal(1, wizard._state.cursor)
+  end)
+
+  it("stays silent when the vocabulary has not resolved yet", function()
+    local opts = priority_only({ default = "urgent" })
+    opts.discovered = true
+    open_bean(NO_PRIORITY, opts)
+    wizard.start()
+    -- Re-render in the state the step sees before the async read lands.
+    local notes = capture_notifies()
+    schema._default_warned = {}
+    wizard._state.data.vocab = nil
+    wizard.refresh(wizard._state)
+    assert.are.equal(0, #notes)
+    assert.are.equal(1, wizard._state.cursor)
+  end)
+
+  it("stays silent on a buffer with no project root", function()
+    local opts = priority_only({ default = "urgent" })
+    opts.discovered = true
+    local buf = open_bean(NO_PRIORITY, opts)
+    vim.b[buf].beans = { id = "beans-self", bufnr = buf }
+    local notes = capture_notifies()
+    wizard.start()
+    assert.are.equal(0, #notes)
+    assert.are.equal(1, wizard._state.cursor)
+  end)
+
+  it("honours notify = false", function()
+    local opts = priority_only({ default = "urgent" })
+    opts.discovered = true
+    opts.config.notify = false
+    open_bean(NO_PRIORITY, opts)
+    local notes = capture_notifies()
+    wizard.start()
+    assert.are.equal(0, #notes)
+    assert.are.equal(1, wizard._state.cursor)
   end)
 end)

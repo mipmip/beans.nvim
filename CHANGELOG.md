@@ -7,6 +7,17 @@ breaking changes may occur on a minor bump.
 
 ## [Unreleased]
 
+### Added
+
+- Configurable wizard defaults: `fields.status.default`, `fields.type.default` and
+  `fields.priority.default` set the value each enum step starts its cursor on when
+  the bean has no value for that field. The default is cursor placement only, so
+  the wizard still writes nothing until you confirm with `<CR>` or a mnemonic, and
+  `<Tab>` leaves the field unset. This mainly helps `priority`, which Beans creates
+  no default for, so the step used to open on `critical`. A configured value the
+  project's vocabulary does not contain warns once and is ignored. See
+  `:help beans-field-defaults`.
+
 ### Changed
 
 - Documentation: `doc/beans.txt` (`:help beans`) is now the complete reference —

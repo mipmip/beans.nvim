@@ -28,6 +28,26 @@ describe("beans config", function()
     assert.is_true(config.merge().fields.parent.title_comment)
   end)
 
+  it("leaves every enum field default unset out of the box", function()
+    local beans = require("beans")
+    beans.setup()
+    for _, field in ipairs({ "status", "type", "priority" }) do
+      assert.is_nil(beans.config.fields[field].default)
+    end
+    -- The sibling that shares the priority entry is untouched.
+    assert.is_true(beans.config.fields.priority.allow_clear)
+  end)
+
+  it("setting one enum default preserves its siblings", function()
+    local merged = config.merge({ fields = { priority = { default = "normal" } } })
+    assert.are.equal("normal", merged.fields.priority.default)
+    assert.is_true(merged.fields.priority.allow_clear)
+    assert.is_true(merged.fields.tags.normalize)
+    assert.is_true(merged.fields.tags.validate)
+    assert.are.same({ "milestone", "epic" }, merged.fields.parent.types)
+    assert.is_nil(merged.fields.status.default)
+  end)
+
   it("exposes the version from the VERSION file", function()
     local v = require("beans").version
     assert.is_string(v)
@@ -86,6 +106,59 @@ describe("beans config validation", function()
     local _, warnings = config.validate(cfg)
     assert.are.equal(0, #warnings)
     assert.is_false(cfg.notify)
+  end)
+
+  it("drops a non-string enum default with one warning", function()
+    local cfg = config.merge({ fields = { priority = { default = 3 } } })
+    local _, warnings = config.validate(cfg)
+    assert.is_nil(cfg.fields.priority.default)
+    assert.are.equal(1, #warnings)
+    assert.is_truthy(warnings[1]:match("fields%.priority%.default"))
+    -- Dropping the default leaves the rest of the entry alone.
+    assert.is_true(cfg.fields.priority.allow_clear)
+  end)
+
+  it("keeps a string default that no vocabulary contains", function()
+    -- Vocabularies are discovered per project at runtime, so setup cannot judge
+    -- the value; the wizard checks it when the step opens.
+    local cfg = config.merge({ fields = { priority = { default = "urgent" } } })
+    local _, warnings = config.validate(cfg)
+    assert.are.equal("urgent", cfg.fields.priority.default)
+    assert.are.equal(0, #warnings)
+  end)
+end)
+
+describe("beans config.warn", function()
+  local orig_notify
+
+  before_each(function()
+    orig_notify = vim.notify
+  end)
+  after_each(function()
+    vim.notify = orig_notify
+  end)
+
+  local function capture(cfg)
+    local notes = {}
+    vim.notify = function(msg, lvl)
+      table.insert(notes, { msg = msg, lvl = lvl })
+    end
+    config.warn(cfg, "beans.nvim: test message")
+    return notes
+  end
+
+  it("emits at WARN under the default level", function()
+    local notes = capture(config.merge())
+    assert.are.equal(1, #notes)
+    assert.are.equal(vim.log.levels.WARN, notes[1].lvl)
+  end)
+
+  it("stays silent when notify is false", function()
+    assert.are.equal(0, #capture(config.merge({ notify = false })))
+  end)
+
+  it("stays silent when the level is above WARN", function()
+    assert.are.equal(0, #capture(config.merge({ notify = vim.log.levels.ERROR })))
   end)
 end)
 

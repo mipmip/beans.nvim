@@ -77,6 +77,10 @@ describe("beans.schema discovery (async)", function()
     end, 20)
     assert.is_not_nil(vocab)
     assert.are.same({ "in-progress", "todo", "draft", "completed", "scrapped" }, vocab.status)
+    -- Reported by Beans, so a configured default may be judged against it.
+    assert.is_true(vocab.discovered.status)
+    assert.is_true(vocab.discovered.type)
+    assert.is_true(vocab.discovered.priority)
   end)
 
   it("falls back to the config table when the binary is missing", function()
@@ -95,5 +99,42 @@ describe("beans.schema discovery (async)", function()
     end, 20)
     assert.is_not_nil(vocab)
     assert.are.same(fallback.status, vocab.status)
+    -- Filled in from the fallback table, not reported by Beans. Every field is
+    -- non-nil either way, so this flag is the only thing that tells them apart.
+    assert.is_false(vocab.discovered.status)
+    assert.is_false(vocab.discovered.type)
+    assert.is_false(vocab.discovered.priority)
+  end)
+end)
+
+describe("beans.schema default warn-once record", function()
+  before_each(function()
+    schema.reset_caches()
+  end)
+
+  it("reports the first call for a root and field only", function()
+    assert.is_true(schema.mark_default_warned("/p/one", "priority"))
+    assert.is_false(schema.mark_default_warned("/p/one", "priority"))
+    assert.is_false(schema.mark_default_warned("/p/one", "priority"))
+  end)
+
+  it("keeps fields within a root independent", function()
+    assert.is_true(schema.mark_default_warned("/p/one", "priority"))
+    assert.is_true(schema.mark_default_warned("/p/one", "status"))
+  end)
+
+  it("keeps roots independent, since vocabularies are per project", function()
+    assert.is_true(schema.mark_default_warned("/p/one", "priority"))
+    assert.is_true(schema.mark_default_warned("/p/two", "priority"))
+  end)
+
+  it("reset_caches clears every per-root cache and record", function()
+    schema._vocab_cache["/p/one"] = { status = {} }
+    schema._list_cache["/p/one"] = { data = {}, at = 0 }
+    schema.mark_default_warned("/p/one", "priority")
+    schema.reset_caches()
+    assert.are.same({}, schema._vocab_cache)
+    assert.are.same({}, schema._list_cache)
+    assert.is_true(schema.mark_default_warned("/p/one", "priority"))
   end)
 end)

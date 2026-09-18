@@ -90,6 +90,16 @@ local function with_fallback(parsed, fallback)
     status = parsed.status or fallback.status,
     type = parsed.type or fallback.type,
     priority = parsed.priority or fallback.priority,
+    --- Which fields Beans actually reported, as opposed to being filled in from
+    --- the `fallback` table above. Every field is non-nil once resolution
+    --- finishes, so this is the only way to tell the two apart; the wizard
+    --- validates a configured default only against a vocabulary Beans reported
+    --- (see wizard/steps/enum.lua).
+    discovered = {
+      status = parsed.status ~= nil,
+      type = parsed.type ~= nil,
+      priority = parsed.priority ~= nil,
+    },
   }
 end
 
@@ -151,6 +161,39 @@ local LIST_TTL_MS = 30 * 1000
 
 M._vocab_cache = {} -- root -> vocab table (session-lived)
 M._list_cache = {} -- root -> { data = <array>, at = <ms> }
+M._default_warned = {} -- root -> { [field] = true } (session-lived)
+
+--- Record that a bad `fields.<field>.default` has been reported for this project
+--- and field, returning true only the first time.
+---
+--- Keyed by root as well as field because the configuration is global to the
+--- session but vocabularies are discovered per project: the same configured
+--- value can be correct in one project and wrong in another, and both deserve to
+--- be reported. Steps re-enter freely (back navigation, re-render on prefetched
+--- data), so without this a single bad value would warn on every render.
+--- @param root string
+--- @param field string
+--- @return boolean first  true when this is the first report for root+field
+function M.mark_default_warned(root, field)
+  local seen = M._default_warned[root]
+  if not seen then
+    seen = {}
+    M._default_warned[root] = seen
+  end
+  if seen[field] then
+    return false
+  end
+  seen[field] = true
+  return true
+end
+
+--- Drop every per-root cache and record. Used by the test harness so state does
+--- not leak between cases.
+function M.reset_caches()
+  M._vocab_cache = {}
+  M._list_cache = {}
+  M._default_warned = {}
+end
 
 --- Discover vocabularies for a project, caching per root for the session.
 --- Falls back to config.fallback when the binary is missing or unparsable.

@@ -114,6 +114,48 @@ require("beans").setup({
 })
 ```
 
+### Field defaults
+
+`status`, `type` and `priority` each take a `default`: the value the wizard
+starts its cursor on when the bean has no value for that field.
+
+```lua
+require("beans").setup({
+  fields = { priority = { default = "normal" } },
+})
+```
+
+A default is cursor placement, not a write. Opening a step never touches the
+buffer, so the wizard still writes only what you confirm:
+
+| Key               | Effect                                        |
+| ----------------- | --------------------------------------------- |
+| `<CR>` or letter  | writes the value under the cursor, advances   |
+| `<Tab>`           | advances, leaves the field unset              |
+
+Accepting a default therefore costs one keystroke rather than none. That is the
+point: opening the wizard stays free of side effects, so pressing `<Esc>`
+straight away leaves a fresh bean exactly as Beans wrote it (see
+[Notes](#notes)).
+
+A default applies only to an absent or empty field. A field that already has a
+value keeps it and the cursor starts there. A value the vocabulary does not know
+counts as set too, so the cursor stays on the first option instead of hiding the
+discrepancy.
+
+`priority` is the field this matters for. Beans fills `status` and `type` from
+`.beans.yml` when it creates a bean, but it has no `default_priority`, so a
+fresh bean arrives with no priority and the step would otherwise open on the
+first value in the vocabulary.
+
+A configured value the project's vocabulary does not contain warns once per
+project and is ignored. Vocabularies are discovered per project at runtime, so a
+value can be right in one project and wrong in another.
+
+`tags` and `parent` take no default. In those steps `<Tab>` confirms and writes
+rather than skipping, so a preselected value would be written by the key that
+means "I chose nothing".
+
 ## Insert-mode completion
 
 An `omnifunc` is set (buffer-local) in bean buffers only, completing values when

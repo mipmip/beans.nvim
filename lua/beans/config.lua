@@ -73,8 +73,19 @@ M.defaults = {
   },
 
   fields = {
+    --- Each enum field accepts a `default`: the value the wizard starts its
+    --- cursor on when the bean has no value for that field. It is cursor
+    --- placement only, never a write, so advancing past the step still leaves
+    --- the field unset. Unset here, so behaviour is unchanged until configured.
+    status = {
+      -- default = "todo",
+    },
+    type = {
+      -- default = "task",
+    },
     priority = {
       allow_clear = true,
+      -- default = "normal",
     },
     tags = {
       normalize = true,
@@ -139,6 +150,12 @@ function M.merge(opts)
   return vim.tbl_deep_extend("force", vim.deepcopy(M.defaults), opts or {})
 end
 
+--- The wizard fields that accept a `fields.<field>.default`. The tags and parent
+--- steps are excluded: their next key confirms and writes rather than skipping,
+--- so a preselected default would be written by the key meaning "I chose nothing".
+M.enum_fields = { "status", "type", "priority" }
+local ENUM_FIELDS = M.enum_fields
+
 -- Expected types for the top-level keys, used by validate().
 local EXPECTED = {
   executable = "string",
@@ -176,7 +193,36 @@ function M.validate(cfg)
     )
     cfg.notify = M.defaults.notify
   end
+  -- `fields.<field>.default` names a vocabulary value. Only its type can be
+  -- checked here: vocabularies are discovered per project at runtime and are not
+  -- known when setup() runs, so the wizard checks the value when the step opens.
+  for _, field in ipairs(ENUM_FIELDS) do
+    local entry = type(cfg.fields) == "table" and cfg.fields[field] or nil
+    if type(entry) == "table" and entry.default ~= nil and type(entry.default) ~= "string" then
+      table.insert(
+        warnings,
+        string.format("beans.nvim: config.fields.%s.default should be a string", field)
+      )
+      entry.default = nil
+    end
+  end
   return cfg, warnings
+end
+
+--- Emit one WARN notification unless `notify` suppresses it. Shared by setup
+--- validation and the wizard's runtime checks so the level gate lives in one
+--- place rather than being duplicated at each call site.
+--- @param cfg table|nil  a merged config
+--- @param msg string
+function M.warn(cfg, msg)
+  local level = cfg and cfg.notify
+  if level == false then
+    return
+  end
+  if type(level) == "number" and vim.log.levels.WARN < level then
+    return
+  end
+  vim.notify(msg, vim.log.levels.WARN)
 end
 
 return M

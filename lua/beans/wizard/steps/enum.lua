@@ -23,6 +23,52 @@ local function current_value(lines, key)
   return nil
 end
 
+--- Resolve `fields.<field>.default` to an index in `options`.
+---
+--- The default is cursor placement only: it decides where the step opens, never
+--- what the buffer says. Returns nil when nothing usable is configured.
+---
+--- A configured value that the vocabulary does not contain is reported once per
+--- project and field, then ignored. The report is withheld unless Beans actually
+--- reported that vocabulary: while the `fallback` table is standing in, a later
+--- re-render may still find the value, and the warning would have to be
+--- retracted.
+--- @param state table
+--- @param field string
+--- @param values string[]  the vocabulary backing the option list
+--- @param options table[]
+--- @return integer|nil
+local function default_index(state, field, values, options)
+  local cfg = state.config
+  local entry = cfg.fields and cfg.fields[field]
+  local want = entry and entry.default
+  if type(want) ~= "string" then
+    return nil
+  end
+
+  for i, opt in ipairs(options) do
+    if opt.value == want then
+      return i
+    end
+  end
+
+  local vocab = state.data.vocab
+  local discovered = vocab and vocab.discovered and vocab.discovered[field]
+  local root = state.ctx and state.ctx.root
+  if discovered and root and schema.mark_default_warned(root, field) then
+    require("beans.config").warn(
+      cfg,
+      string.format(
+        'beans.nvim: fields.%s.default is "%s", which is not one of %s; ignoring it',
+        field,
+        want,
+        table.concat(values, ", ")
+      )
+    )
+  end
+  return nil
+end
+
 function M.enter(wizard, state)
   local field = state.field
   local cfg = state.config
@@ -67,13 +113,25 @@ function M.enter(wizard, state)
     table.insert(options, { value = nil, clear = true, label = "(clear)", mnemonic = clear_key })
   end
 
-  -- Cursor starts on the currently-set value, else the first option.
+  -- Cursor starts on the currently-set value; failing that, on the configured
+  -- default when the field is unset; failing that, on the first option.
+  --
+  -- The `current == nil` test is deliberate and is not the same as "no option is
+  -- active". A bean carrying a value the vocabulary does not know (a hand-written
+  -- `priority: urgent`) marks no option active but is still set, and moving the
+  -- cursor to the default there would hide the discrepancy.
   state.cursor = 1
+  local active_index
   for i, opt in ipairs(options) do
     if opt.active then
-      state.cursor = i
+      active_index = i
       break
     end
+  end
+  if active_index then
+    state.cursor = active_index
+  elseif current == nil then
+    state.cursor = default_index(state, field, values, options) or 1
   end
 
   local function draw()

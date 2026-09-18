@@ -189,8 +189,22 @@ default table (the source of truth is lua/beans/config.lua):
 
       --- Per-field behaviour.
       fields = {
+        --- `default` is the value the wizard starts its cursor on when the
+        --- bean has no value for that field. It is cursor placement only:
+        --- the value is confirmed, never applied, so <Tab> past the step
+        --- still leaves the field unset. Confirm with <CR> or the
+        --- mnemonic to write it. Unset by default.
+        --- Only status, type and priority take a `default`; see
+        --- |beans-field-defaults|.
+        status = {
+          -- default = "todo",
+        },
+        type = {
+          -- default = "task",
+        },
         priority = {
           allow_clear = true,        -- offer a "clear" entry (priority only)
+          -- default = "normal",
         },
         tags = {
           normalize = true,          -- lowercase and trim new tags
@@ -260,6 +274,50 @@ Deliberately not configurable: the canonical frontmatter field order (it is
 Beans', not ours); that the wizard edits the buffer rather than shelling out;
 and the `# <id>` comment handling. Making any of these optional would let you
 produce files Beans does not round-trip cleanly.
+
+Field defaults                                        *beans-field-defaults*
+
+`fields.status.default`, `fields.type.default` and `fields.priority.default`
+name the value the wizard starts its cursor on when the bean has no value for
+that field. They are unset out of the box.
+
+A default is cursor placement, not a write. Opening a step never changes the
+buffer, so the wizard still writes only what you confirm:
+
+  <CR> or mnemonic   writes the value under the cursor and advances
+  <Tab>              advances and leaves the field unset
+
+So accepting a default costs one keystroke rather than none. This is
+deliberate: it keeps opening the wizard free of side effects, which matters
+because pressing <Esc> straight away must leave a fresh bean exactly as Beans
+wrote it.
+
+A default applies only when the field is absent or empty. A field that already
+carries a value keeps it, and the cursor starts there instead. A value the
+vocabulary does not know counts as set too, so the cursor stays on the first
+option rather than hiding the discrepancy.
+
+`priority` is the field this matters for in practice. Beans fills `status` and
+`type` from `.beans.yml` (`default_status`, `default_type`) when it creates a
+bean, but it has no `default_priority`, so a fresh bean reaches the editor with
+no priority at all and the step would otherwise open on the first value in the
+vocabulary.
+
+A configured value the project's vocabulary does not contain warns once per
+project and is ignored; the step falls back to the first option. Vocabularies
+are discovered per project at runtime (see |beans-wizard|), so a value can be
+right in one project and wrong in another.
+
+`tags` and `parent` take no default. In those steps <Tab> confirms and writes
+rather than skipping, so a preselected value would be written by the key that
+means "I chose nothing".
+
+Example, starting new beans on normal priority: >lua
+
+    require("beans").setup({
+      fields = { priority = { default = "normal" } },
+    })
+<
 
 Hooks                                                          *beans-hooks*
 

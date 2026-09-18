@@ -154,13 +154,8 @@ function M.setup(opts)
 
   -- Validate and, for any invalid value, warn once and fall back — never error.
   local _, warnings = config.validate(M.config)
-  local level = M.config.notify
-  if level ~= false then
-    for _, w in ipairs(warnings) do
-      if type(level) ~= "number" or vim.log.levels.WARN >= level then
-        vim.notify(w, vim.log.levels.WARN)
-      end
-    end
+  for _, w in ipairs(warnings) do
+    config.warn(M.config, w)
   end
 
   create_autocmds()
