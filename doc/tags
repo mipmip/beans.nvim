@@ -6,6 +6,7 @@ beans-config	beans.txt	/*beans-config*
 beans-contents	beans.txt	/*beans-contents*
 beans-detection	beans.txt	/*beans-detection*
 beans-detection-autostart	beans.txt	/*beans-detection-autostart*
+beans-field-defaults	beans.txt	/*beans-field-defaults*
 beans-health	beans.txt	/*beans-health*
 beans-highlights	beans.txt	/*beans-highlights*
 beans-hooks	beans.txt	/*beans-hooks*

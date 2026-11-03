@@ -10,9 +10,27 @@
 set -uo pipefail
 
 DIR="${1:-tests/}"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-raw=$(nvim --headless \
-  -c "PlenaryBustedDirectory ${DIR} {minimal_init = 'tests/minimal_init.lua'}" 2>&1)
+# The *parent* nvim needs plenary on its runtimepath: it is the one that defines
+# :PlenaryBustedDirectory. Inside `nix develop` the dev editor ships it; outside,
+# CI vendors it into .deps/plenary.nvim. Without this the -c command fails with
+# E492 and headless nvim idles forever instead of exiting.
+rtp=(--cmd "lua vim.opt.runtimepath:prepend('${ROOT}')")
+if [ -d "${ROOT}/.deps/plenary.nvim" ]; then
+  rtp+=(--cmd "lua vim.opt.runtimepath:prepend('${ROOT}/.deps/plenary.nvim')")
+fi
+
+# Hard cap so a stuck child can never hold a CI runner for hours. Redirect stdin
+# for the same reason: a headless nvim that blocks on input never returns.
+timer=()
+if command -v timeout > /dev/null 2>&1; then
+  timer=(timeout -k 10 "${NVIM_TIMEOUT:-300}")
+fi
+
+raw=$("${timer[@]}" nvim --headless "${rtp[@]}" \
+  -c "PlenaryBustedDirectory ${DIR} {minimal_init = '${ROOT}/tests/minimal_init.lua'}" \
+  2>&1 < /dev/null)
 status=$?
 echo "$raw"
 
